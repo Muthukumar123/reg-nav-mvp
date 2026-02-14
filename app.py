@@ -1,20 +1,121 @@
 """
 Regulation Navigator MVP - FastAPI Application
 
-A Retrieval-Augmented Generation (RAG) system that answers regulatory compliance
-questions using document retrieval and Azure OpenAI LLM integration.
+ARCHITECTURE OVERVIEW
+=====================
 
-Key Features:
-- TF-IDF based retrieval of relevant regulatory documents
-- Azure OpenAI LLM for generating source-based answers
-- Comprehensive logging and exception handling
-- Interactive Swagger/ReDoc API documentation
-- Citation tracking for answer transparency
+This is a Retrieval-Augmented Generation (RAG) system that answers regulatory compliance
+questions using a two-stage process:
+
+1. RETRIEVAL STAGE: TF-IDF vectorization finds relevant regulatory chunks
+   - Load question text
+   - Calculate cosine similarity against pre-built TF-IDF index
+   - Return top_k most semantically similar chunks with scores
+
+2. GENERATION STAGE: Azure OpenAI LLM generates answer from retrieved chunks
+   - Send question + retrieved chunks as context to LLM
+   - LLM reads the regulatory text and generates source-based answer
+   - Extract citations from the generated response
+   - Format and return JSON response
+
+DATA FLOW
+=========
+
+User Query (HTTP POST /ask)
+   ↓
+Input Validation (Pydantic)
+   ↓
+TF-IDF Retrieval (ChunkRetriever)
+   └─ Cosine similarity against data.txt chunks
+   └─ Returns top_k chunks with scores
+   ↓
+LLM Generation (llm.call_llm)
+   └─ Azure OpenAI gpt-4-turbo-preview
+   └─ Temperature: 0.2 (practical, low hallucination)
+   ↓
+Response Formatting
+   └─ Structure: {answer, citations[], scores[]}
+   ↓
+HTTP Response (JSON)
+
+ARCHITECTURE PRINCIPLES APPLIED
+===============================
+
+1. SEPARATION OF CONCERNS
+   - load_chunks(): Handles data parsing only
+   - ChunkRetriever: Handles retrieval logic only
+   - llm.call_llm(): Handles LLM calls only
+   - Flask route: Handles HTTP concerns only
+
+2. SINGLE RESPONSIBILITY PRINCIPLE
+   Each function does ONE thing:
+   - load_chunks: Parse data.txt → list of chunks
+   - initialize_retrieval: Build TF-IDF index from chunks
+   - ask_question route: Validate input → call retrieval → call LLM → format response
+
+3. DEPENDENCY INJECTION
+   - llm module imported (not hardcoded)
+   - Configuration via environment variables
+   - Easy to swap LLM implementations
+
+4. ERROR HANDLING
+   - Input validation: Pydantic checks question length
+   - Graceful degradation: Return user-friendly error messages
+   - Detailed logging: All stages logged for debugging
+
+5. PERFORMANCE OPTIMIZATION
+   - Single TF-IDF index built at startup (not per-request)
+   - Scikit-learn cosine similarity is optimized
+   - Top-k retrieval limits context size for LLM
+
+KEY FILES
+=========
+- app.py: FastAPI routes + retrieval logic (this file)
+- llm.py: Azure OpenAI integration
+- data.txt: Source regulatory documents in structured format
+
+DATA SOURCE DETAILS
+===================
+Source: data.txt (static plain text file)
+Format: [DOC] Document_Name | Section_Name / Content_text...
+Storage: In-memory list of dicts with keys: doc, section, text
+Loading: Once at app startup, remains in memory
+Chunks: 35 regulatory articles from 4 EU directives
+Index: TF-IDF matrix (35 chunks × 536 vocabulary)
+
+API CONTRACT
+============
+REQUEST:  POST /ask {"question": "...", "top_k": 3}
+RESPONSE: {"answer": "...", "citations": [...], "scores": [...]}
+
+APPLICATION vs API DIFFERENCE
+==============================
+Application (Internal):
+- Works with chunk dicts: {"doc": "...", "section": "...", "text": "..."}
+- Similarity scores: Raw cosine similarity values
+- Source tracking: List of retrieved chunks
+
+API (External):
+- Returns citations array: [{"doc": "...", "section": "..."}]
+- Scores array: Parallel to citations for display
+- Answer text: Formatted with citation references
+- All values serialized to JSON
+
+KEY FEATURES
+============
+- TF-IDF based retrieval (not full-text search)
+- Cosine similarity scoring (semantic relevance)
+- Top-k retrieval (configurable context size)
+- Azure OpenAI LLM integration (gpt-4-turbo)
+- Citation tracking (answer references sources)
+- Comprehensive logging (all stages)
+- Input validation (Pydantic models)
+- Interactive API docs (Swagger UI + ReDoc)
 """
 
 import logging
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -37,11 +138,34 @@ app = FastAPI(title="Regulation Navigator MVP")
 def load_chunks(path="data.txt"):
     """Load and parse regulatory document chunks from data file.
     
-    Reads a text file containing structured regulatory documents and extracts
-    chunks with metadata. Each chunk is identified by a [DOC] header with format:
-    [DOC] DOCUMENT_NAME | SECTION_NAME
+    DATA SOURCE DETAILS
+    ===================
+    File: data.txt (static plain text, committed to repo)
+    Format: [DOC] DOCUMENT_NAME | SECTION_NAME
+            Content text...
+            [DOC] Next document...
     
-    Only chunks with text longer than 30 characters are retained to avoid empties.
+    Purpose: Serve as the knowledge base for retrieval.
+    
+    Parsing Process:
+    1. Read file line by line
+    2. Detect [DOC] headers with pipe-separated doc name and section
+    3. Collect text until next header as chunk content
+    4. Filter out chunks with < 30 characters (avoid noise)
+    5. Return list of structured chunk dictionaries
+    
+    Output Format:
+    [
+        {
+            "doc": "Regulation (EU) 2016/679",
+            "section": "Article 5 - Principles Relating to Processing",
+            "text": "Personal data shall be processed lawfully..."
+        },
+        ...
+    ]
+    
+    This is APPLICATION INTERNAL representation.
+    API layer will transform to citations JSON.
     
     Args:
         path (str): Path to the data file. Default: "data.txt"
@@ -107,36 +231,141 @@ except Exception as e:
     logger.critical(f"Failed to load data chunks: {str(e)}")
     CHUNKS = []
 
-# ---------- Build a simple retrieval index ----------
+# ============================================================================
+# TF-IDF RETRIEVAL ENGINE INITIALIZATION
+# ============================================================================
+#
+# RETRIEVAL MECHANISM
+# ===================
+# This system uses TF-IDF (Term Frequency-Inverse Document Frequency) for semantic
+# retrieval. Here's how it works:
+#
+# 1. VECTORIZATION (fit_transform)
+#    - Each chunk's text is converted to a TF-IDF vector
+#    - TF-IDF scores terms by their frequency in the chunk vs all chunks
+#    - Common terms (like "the") get low weights
+#    - Specific regulatory terms get high weights
+#    - Result: MATRIX is a sparse matrix (35 chunks × 536 terms)
+#
+# 2. QUERY MATCHING (cosine_similarity)
+#    - User question is vectorized using same VECTORIZER
+#    - Cosine similarity compares question vector to each chunk vector
+#    - Score ranges from 0.0 (no match) to 1.0 (perfect match)
+#    - Semantic matching: "processing data" matches "processing personal information"
+#
+# 3. RANKING (top_k selection)
+#    - Scores are sorted and top_k chunks selected
+#    - Top_k parameter (default=3) controls context size sent to LLM
+#    - Tradeoff: More chunks = more context, but may confuse LLM
+#
+# PARAMETERS
+# ==========
+# stop_words=None: Keep all words (don't filter "the", "a", etc)
+#                  Regulatory text needs these for proper understanding
+# min_df=1: Accept even single-occurrence terms
+#          Each regulatory article might use specific terminology once
+# analyzer='word': Split on word boundaries (not character or phrase)
+# lowercase=True: Normalize to lowercase for matching
+# token_pattern: Use standard word pattern regex
+
 try:
     # Initialize TF-IDF vectorizer with minimal filtering
-    # Use None for stop_words to keep more terms, increase max_df to handle common terms
     VECTORIZER = TfidfVectorizer(
-        stop_words=None,  # Don't filter stop words - we need them!
-        min_df=1,         # Accept even single-occurrence terms
+        stop_words=None,  # Don't filter stop words - regulatory language needs them
+        min_df=1,         # Accept even single-occurrence terms (regulatory specific words)
         analyzer='word',
         lowercase=True,
         token_pattern=r'(?u)\b\w+\b'
     )
-    # fit_transform() learns vocabulary and creates sparse matrix (memory efficient)
+    # fit_transform() learns vocabulary from chunk texts and creates sparse matrix
+    # Output: MATRIX[i][j] = TF-IDF score for term j in chunk i
+    # Sparse format saves memory (most cells are 0)
     MATRIX = VECTORIZER.fit_transform([c["text"] for c in CHUNKS])
-    logger.info(f"Built TF-IDF index with shape {MATRIX.shape}")
+    logger.info(f"Built TF-IDF index with shape {MATRIX.shape} (chunks × vocabulary)")
 except Exception as e:
     logger.critical(f"Failed to build retrieval index: {str(e)}")
     VECTORIZER = None
     MATRIX = None
 
+# ============================================================================
+# REQUEST/RESPONSE MODELS (API CONTRACTS)
+# ============================================================================
+
 class AskRequest(BaseModel):
-    """Request model for the /ask endpoint.
+    """Request model for the POST /ask endpoint.
+    
+    This is the API CONTRACT that clients use to ask questions.
+    It gets automatically validated by Pydantic before reaching the handler.
+    
+    DISTINCTION: APPLICATION vs API
+    ===============================
+    This is an API-level model (what clients send over HTTP).
+    Internally, the application works with chunk dictionaries from load_chunks().
+    The handler transforms between these two representations.
     
     Attributes:
-        question (str): The regulatory compliance question to answer.
-                       Will be converted to TF-IDF vectors for similarity matching.
-        top_k (int): Number of document chunks to retrieve for context (default: 3).
-                    More chunks increase context but may dilute answer quality.
+        question (str): The regulatory compliance question.
+                       - Will be vectorized using VECTORIZER for similarity matching
+                       - Must be 5-1000 characters
+                       - Example: "What are customer due diligence requirements?"
+                       
+        top_k (int): Number of relevant chunks to retrieve from data.txt.
+                    - Default: 3  (retrieves top 3 most similar chunks)
+                    - Range: 1-10 (arbitrary max to avoid huge context)
+                    - Higher k = more context for LLM, but may dilute focus
+                    - Semantic relevance determined by cosine similarity scores
     """
-    question: str  # Required field - the user's regulatory question
-    top_k: int = 3  # Optional field - controls retrieval scope
+    question: str = Field(..., min_length=5, max_length=1000,
+                          description="Regulatory compliance question (5-1000 chars)")
+    top_k: int = Field(default=3, ge=1, le=10,
+                       description="Number of sources to retrieve (1-10)")
+
+class Citation(BaseModel):
+    """Citation reference for answer sources.
+    
+    API model representing where an answer came from (source document + section).
+    This is what the API RETURNS to clients (transformed from internal chunks).
+    
+    Attributes:
+        doc (str): Source document/regulation name
+                  Example: "Regulation (EU) 2016/679" (GDPR)
+        section (str): Specific section/article reference
+                      Example: "Article 5 - Principles Relating to Processing"
+    """
+    doc: str = Field(..., description="Regulation document name")
+    section: str = Field(..., description="Article or section name")
+
+class AskResponse(BaseModel):
+    """Response model for the POST /ask endpoint.
+    
+    This is the API CONTRACT that the server returns to clients.
+    Contains the generated answer, source citations, and relevance scores.
+    
+    INTERNAL vs EXTERNAL
+    ====================
+    The application internally generates answer data.
+    This model structures it for JSON serialization to clients.
+    
+    Attributes:
+        answer (str): Generated answer text.
+                     - Contains the LLM-generated response
+                     - Includes explicit citations like "Article 5; Article 13"
+                     - Format: answer_text + "\nCitations: source1; source2; ..."
+                     
+        citations (list[Citation]): Sources the answer drew from.
+                                    - Derived from retrieved chunk metadata
+                                    - Parallel to scores array (same order)
+                                    - Each citation identifies doc and section
+                                    
+        scores (list[float]): Semantic relevance scores for each chunk.
+                             - Cosine similarity scores from TF-IDF matching
+                             - Range: 0.0 (no match) to 1.0 (perfect match)
+                             - First score usually highest (most relevant chunk)
+                             - Not confidence in answer; just retrieval relevance
+    """
+    answer: str = Field(..., description="Generated answer with citations")
+    citations: list[Citation] = Field(..., description="Sources referenced in answer")
+    scores: list[float] = Field(..., description="Relevance scores for each source")
 
 @app.get("/")
 def root():
@@ -176,38 +405,99 @@ def health():
         raise HTTPException(status_code=500, detail="Health check failed")
 
 @app.post("/ask")
+@app.post("/ask", response_model=AskResponse)
 def ask(req: AskRequest):
-    """Answer regulatory questions using Retrieval-Augmented Generation (RAG).
+    """Main endpoint: Answer regulatory questions using RAG (Retrieval-Augmented Generation).
     
-    Main request processing pipeline:
-    1. Validate system initialization (data loaded, index built)
-    2. Convert user question to TF-IDF vector
-    3. Compute cosine similarity with all document chunks
-    4. Filter irrelevant queries using 0.12 similarity threshold
-    5. Retrieve top-k most relevant chunks from documents
-    6. Format source documents and send to Azure OpenAI LLM
-    7. Return LLM-generated answer with citations and scores
+    TWO-STAGE ARCHITECTURE
+    ======================
+    
+    STAGE 1: RETRIEVAL
+    -----------------
+    1. Load question text from HTTP request
+    2. Vectorize question using fitted TF-IDF VECTORIZER (same vocab as training)
+    3. Compute cosine similarity against all chunks in MATRIX
+    4. Rank chunks by similarity (0.0 = no match, 1.0 = perfect match)
+    5. Filter out low-relevance chunks (threshold < 0.05)
+    6. Select top_k chunks (default=3) as context
+    7. Handle not-found case gracefully
+    
+    STAGE 2: GENERATION
+    -------------------
+    1. Format retrieved chunks with source attribution
+    2. Pass question + chunks toAzure OpenAI LLM (gpt-4-turbo)
+    3. LLM reads chunks and generates answer mentioning sources
+    4. Extract citations from LLM response
+    5. Format response with answer + citations + scores
+    
+    DATA FLOW
+    =========
+    
+    HTTP Request
+    ├─ question: "What is GDPR?"
+    └─ top_k: 3
+        ↓
+    RETRIEVAL STAGE
+    ├─ Vectorize question → TF-IDF vector
+    ├─ Cosine similarity(qvector, MATRIX) → [0.543, 0.412, ...]
+    ├─ Sort by score descending → [idx_1, idx_3, idx_2, ...]
+    ├─ Filter score > 0.05 → [idx_1=0.543, idx_3=0.412, idx_2=0.298]
+    ├─ Select top_k=3 → All three chunks
+    └─ Extract chunks: [GDPR Art5, GDPR Art6, GDPR Art4]
+        ↓
+    GENERATION STAGE
+    ├─ Format sources: "[GDPR | Art5]\ntext...\n\n[GDPR | Art6]\ntext..."
+    ├─ Call LLM: {"question": "...", "sources": "..."}
+    ├─ LLM returns: "GDPR is Regulation... [Citations: Article 5, Article 6]"
+    └─ Parse answer and citations
+        ↓
+    HTTP Response
+    ├─ answer: "GDPR is... [Citations: Article 5, Article 6]"
+    ├─ citations: [{"doc": "GDPR", "section": "Article 5"}, ...]
+    └─ scores: [0.543, 0.412, 0.298]
+    
+    ARCHITECTURE PRINCIPLES
+    =======================
+    
+    1. SEPARATION OF CONCERNS
+       - Retrieval: TF-IDF cosine similarity (this function)
+       - Generation: LLM in llm.py (call_llm)
+       - Validation: Pydantic models (requests/responses)
+       - Data: load_chunks() parses data.txt
+    
+    2. ERROR HANDLING STRATEGY
+       - Input validation: Pydantic checks question length
+       - System validation: Check CHUNKS and MATRIX are initialized
+       - Similarity filtering: Reject low-confidence retrievals
+       - LLM error handling: Graceful error messages
+    
+    3. TRANSPARENCY & CITATIONS
+       - All answers cite their sources (citations list)
+       - Relevance scores show retrieval confidence
+       - Sources formatted clearly for debugging
     
     Args:
-        req (AskRequest): Request containing question and top_k parameters
+        req (AskRequest): HTTP request with:
+            - question: Regulatory question (5-1000 chars)
+            - top_k: Number of sources to retrieve (1-10, default 3)
         
     Returns:
-        dict: Response containing:
-              - answer (str): LLM-generated answer with inline citations
-              - citations (list): Documents and sections used as sources
-              - scores (list): Cosine similarity scores for each source
+        AskResponse: HTTP response with:
+            - answer: LLM-generated answer text + citations
+            - citations: List of source documents and sections
+            - scores: Similarity scores for each source
               
     Raises:
-        HTTPException:
-            - 503: Service not initialized (no data or index)
-            - 502: LLM service error (Azure OpenAI issue)
-            - 500: Unexpected processing error
+        HTTPException 503: Service not initialized (data/index missing)
+        HTTPException 502: LLM service error (Azure OpenAI unavailable)
+        HTTPException 500: Unexpected processing error
     """
     try:
         logger.info(f"Processing question: {req.question[:100]}...")
         logger.debug(f"Request parameters - top_k: {req.top_k}")
         
-        # Validate system initialization before processing
+        # ====== VALIDATION PHASE ======
+        # Ensure system is fully initialized before processing
         if not CHUNKS:
             logger.error("No data chunks available")
             raise HTTPException(status_code=503, detail="Service not initialized: no data loaded")
@@ -216,57 +506,74 @@ def ask(req: AskRequest):
             logger.error("Retrieval index not available")
             raise HTTPException(status_code=503, detail="Service not initialized: index not built")
         
-        # RETRIEVAL PHASE: Convert question to TF-IDF vector and rank documents
+        # ====== RETRIEVAL PHASE ======
+        # Convert question to TF-IDF vector and find similar chunks
         logger.debug("Transforming query and computing similarities")
-        # Transform question using fitted vectorizer vocabulary
-        qv = VECTORIZER.transform([req.question])
-        # Compute cosine similarity between query and all chunks (0-1 scale)
-        sims = cosine_similarity(qv, MATRIX).flatten()
-        # Get indices of chunks sorted by similarity (descending)
+        # VECTORIZER.transform() uses fitted vocabulary from CHUNKS
+        # Output: qvector has same dimensions as MATRIX columns (term weights)
+        qvector = VECTORIZER.transform([req.question])
+        
+        # cosine_similarity computes: qvector · chunk_vector / (||qvector|| * ||chunk_vector||)
+        # Output: sims array with scores for each chunk (0.0 = no match, 1.0 = perfect match)
+        sims = cosine_similarity(qvector, MATRIX).flatten()
+        
+        # argsort() returns indices that would sort the array
+        # [::-1] reverses to descending order (highest similarity first)
         sorted_indices = sims.argsort()[::-1]
-        # Filter to only keep chunks with similarity > 0.05 (removes weak matches)
+        
+        # Filter to chunks with similarity > 0.05 (removes noise/weak matches)
+        # Then take top_k from the filtered list
         idxs = [i for i in sorted_indices if sims[i] > 0.05][:req.top_k]
         
-        # Extract best similarity score for relevance filtering
+        # Get best similarity score for logging
         best_score = float(sims[idxs[0]]) if len(idxs) else 0.0
-        logger.info(f"Best similarity score: {best_score:.4f}")
+        logger.info(f"Retrieved {len(idxs)} chunks, best score: {best_score:.4f}")
         
-        # FILTERING PHASE: Reject queries with no meaningful matches
-        # This prevents hallucination by refusing to answer out-of-scope questions
+        # ====== FILTERING PHASE ======
+        # Reject queries with no meaningful matches (prevents hallucination)
         if best_score < 0.05 or not idxs:
-            logger.info("Query has no matching sources, returning NOT FOUND")
+            logger.info("Query not found in sources (similarity < 0.05), returning NOT FOUND")
             return {
                 "answer": "NOT FOUND IN SOURCES.",
                 "citations": [],
                 "scores": []
             }
 
-        # FORMATTING PHASE: Build source context for LLM
-        # Organize retrieved chunks with metadata for clear attribution
+        # ====== FORMATTING PHASE ======
+        # Prepare retrieved chunks with metadata for LLM context
         sources_blocks = []
         citations = []
         scores = []
 
-        # Iterate through top-k chunks in ranking order
-        for i in idxs:
-            c = CHUNKS[int(i)]
-            score = float(sims[int(i)])
-            # Format as: [DOC_NAME | SECTION]\nCHUNK_TEXT
-            sources_blocks.append(f"[{c['doc']} | {c['section']}]\n{c['text'].strip()}")
-            # Track which sources are used for citation
-            citations.append({"doc": c["doc"], "section": c["section"]})
-            # Store similarity score for transparency
+        for idx in idxs:
+            chunk = CHUNKS[int(idx)]
+            score = float(sims[int(idx)])
+            
+            # Format source block: [DOCUMENT | SECTION]\ntext
+            source_block = f"[{chunk['doc']} | {chunk['section']}]\n{chunk['text'].strip()}"
+            sources_blocks.append(source_block)
+            
+            # Track citation metadata (document + section)
+            citations.append({"doc": chunk["doc"], "section": chunk["section"]})
+            
+            # Store similarity score for response transparency
             scores.append(score)
-            logger.debug(f"Retrieved: {c['doc']} - {c['section']} (score: {score:.4f})")
+            
+            logger.debug(f"Retrieved: {chunk['doc']} - {chunk['section']} (score: {score:.4f})")
 
-        # Concatenate all source blocks with spacing for clarity
+        # Join all source blocks with spacing for clarity
         sources_text = "\n\n".join(sources_blocks)
-        logger.info(f"Calling LLM with {len(citations)} source chunks")
+        logger.info(f"Prepared {len(citations)} sources for LLM, total chars: {len(sources_text)}")
 
-        # LLM PHASE: Send question + sources to Azure OpenAI for answer generation
+        # ====== GENERATION PHASE ======
+        # Send question + retrieved sources to Azure OpenAI LLM for answer generation
+        logger.debug(f"Calling LLM with question + {len(citations)} source chunks")
         try:
+            # call_llm() takes question and sources, returns answer string
+            # LLM will read sources and generate answer that cites them
+            # (see llm.py for configuration details)
             llm_answer = call_llm(req.question, sources_text)
-            logger.info("LLM call successful")
+            logger.info("LLM answer generated successfully")
         except Exception as llm_error:
             logger.error(f"LLM call failed: {str(llm_error)}")
             raise HTTPException(
@@ -274,13 +581,19 @@ def ask(req: AskRequest):
                 detail=f"LLM service error: {str(llm_error)}"
             )
 
-        return {
-            "answer": llm_answer,
-            "citations": citations,
-            "scores": scores
+        # ====== RESPONSE FORMATTING ======
+        # Structure response according to AskResponse model (API contract)
+        response = {
+            "answer": llm_answer,      # String with full answer + citations
+            "citations": citations,     # List of source documents/sections
+            "scores": scores            # Similarity scores (relevance confidence)
         }
+        
+        logger.info(f"Returning response with {len(citations)} citations")
+        return response
     
     except HTTPException:
+        # Re-raise HTTP exceptions (already have proper status codes)
         raise
     except Exception as e:
         logger.error(f"Unexpected error in /ask endpoint: {str(e)}", exc_info=True)

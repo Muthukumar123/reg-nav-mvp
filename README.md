@@ -2,15 +2,136 @@
 
 A FastAPI-based Retrieval-Augmented Generation (RAG) application for answering regulatory compliance questions using Azure OpenAI. The system retrieves relevant regulatory text chunks and provides precise, citation-backed answers.
 
-## 🎯 Current Status: Enterprise Bank-Ready MVP
+## 🏗️ System Architecture Overview
 
-- ✅ **Phase 1 Complete:** Retrieval quality improvements & strict refusal behavior implemented
-- ✅ **Phase 2 Complete:** Real EU Directive 2015/849 integrated (20 articles)
-- ✅ **Phase 3 Complete:** Multi-Directive expansion (GDPR, PSD2, MiFID II)
-- ✅ **Enterprise Coverage:** 35 articles, 536 vocabulary terms, 4 major EU regulations
-- ✅ **Production Deployment:** Ready for bank pitch and compliance team demos
+### High-Level Data Flow
 
-## 📊 Integrated Regulations (35 articles, 536 vocabulary terms)
+```
+User Query
+    ↓
+---------- API LAYER ----------
+POST /ask {question, top_k}
+    ↓
+---------- APPLICATION LAYER ----------
+[1] TF-IDF Retrieval Engine
+    - Load query text
+    - Calculate cosine similarity against indexed chunks
+    - Return top_k most relevant chunks with scores
+    ↓
+[2] LLM Generation (Azure OpenAI)
+    - Send retrieved chunks + question to LLM
+    - LLM reads context and generates answer
+    - Citations extracted from response
+    ↓
+[3] Response Formatting
+    - Structure answer + citations + scores
+    - Return JSON response
+---------- RESPONSE ----------
+{answer, citations[], scores[]}
+```
+
+### Core Architecture Principles Applied
+
+**1. Separation of Concerns**
+- **API Layer** (`app.py`): FastAPI routes, request validation, response formatting
+- **Retrieval Layer**: TF-IDF vectorization and cosine similarity search
+- **LLM Layer** (`llm.py`): Azure OpenAI integration, prompt engineering
+- **Data Layer** (`data.txt`): Regulatory documents in structured format
+
+**2. Single Responsibility Principle (SRP)**
+- `load_chunks()`: Only loads and parses data
+- `initialize_retrieval()`: Only builds TF-IDF index
+- `call_llm()`: Only handles LLM API calls
+- Route handlers: Only handle HTTP request/response
+
+**3. Dependency Injection**
+- LLM module imported and used, not hardcoded
+- Configuration via environment variables
+- Easy to swap implementations
+
+**4. Error Handling Strategy**
+- Graceful degradation on LLM failures
+- Detailed logging at each layer
+- User-friendly error messages in API responses
+
+**5. Performance Optimization**
+- Single TF-IDF index built at startup (not per-request)
+- Cosine similarity computed efficiently with scikit-learn
+- Top-k retrieval limits token context
+
+### Request/Response Contract
+
+**Application Internal Representation:**
+```python
+# What the application works with internally
+chunk = {
+    "doc": "Regulation (EU) 2016/679",
+    "section": "Article 5",
+    "text": "Personal data shall be processed lawfully..."
+}
+
+answer = {
+    "text": "Full generated answer",
+    "sources": ["Article 5", "Article 6"],
+    "scores": [0.543, 0.412]
+}
+```
+
+**API Request Contract (External):**
+```json
+POST /ask
+{
+  "question": "What is GDPR?",
+  "top_k": 3
+}
+```
+
+**API Response Contract (External):**
+```json
+{
+  "answer": "GDPR is Regulation (EU) 2016/679 that...\nCitations: Article 5; Article 6",
+  "citations": [
+    {"doc": "Regulation (EU) 2016/679", "section": "Article 5"},
+    {"doc": "Regulation (EU) 2016/679", "section": "Article 6"}
+  ],
+  "scores": [0.543, 0.412]
+}
+```
+
+**Key Differences:**
+- Application uses internal `chunk` format
+- API transforms to `citations` (array of objects)
+- LLM generates text, API structures the response
+- Scores track semantic relevance, not answer confidence
+
+## 📊 Data Source & Structure
+
+### Where Data Comes From
+
+**Source:** `data.txt` - A static regulatory document corpus prepared manually
+
+**Format:** Plain text with structured headers
+```
+[DOC] Regulation (EU) 2016/679 | Article 5 - Principles Relating to Processing
+Personal data shall be processed lawfully, fairly and in a transparent manner...
+
+[DOC] Regulation (EU) 2016/679 | Article 6 - Lawfulness of Processing
+Processing shall be lawful only if and to the extent that at least one of...
+```
+
+**Parsing Process:**
+1. Read `data.txt` line by line
+2. Identify `[DOC]` headers containing document name and section
+3. Extract text between headers as chunk content
+4. Filter chunks with text length > 30 characters
+5. Store as structured dictionaries with `doc`, `section`, and `text` fields
+
+**Storage:** In-memory list of dictionaries (not database)
+- Loaded once at application startup
+- Indexed with TF-IDF vectorizer
+- Remains in memory during application lifetime
+
+### Data Quality & Coverage
 
 **✅ EU Directive 2015/849** - Anti-Money Laundering (20 articles)
 - Customer Due Diligence, Beneficial Ownership, Enhanced Monitoring
@@ -27,6 +148,68 @@ A FastAPI-based Retrieval-Augmented Generation (RAG) application for answering r
 
 **✅ Directive 2014/65/EU** - MiFID II (5 articles)
 - Suitability Assessment, Best Execution, Conflicts of Interest
+
+**Statistics:**
+- Total Chunks: 35 regulatory articles/sections
+- Vocabulary Size: 536 unique terms (after TF-IDF vectorization)
+- Average Chunk Length: ~250 words
+- Retrieval Index: Built at startup, O(1) scoring per query
+
+## 🧠 LLM Integration & How It Works
+
+### Azure OpenAI Connection
+
+**What the LLM Does:**
+1. Takes the user's question + top-k retrieved chunks
+2. Reads chunk context to understand regulatory requirements
+3. Generates a natural language answer citing the regulations
+4. LLM is NOT trained on this data—just reads it as context
+
+**Important:** This is NOT RAG fine-tuning. This is in-context learning:
+- No model training or fine-tuning
+- LLM acts as a reasoning engine over the provided context
+- All answers must be justified by retrieved chunks
+- Citations come from the chunks provided
+
+### Generation Process
+
+```
+[Question] "What is customer due diligence?"
+   ↓
+[Retrieval] TF-IDF finds closest chunks
+   - AML Directive Article 5 (score: 0.543)
+   - GDPR Article 13 (score: 0.412)
+   - PSD2 Article 4 (score: 0.298)
+   ↓
+[LLM Prompt Construction]
+System: "You are a regulatory compliance expert..."
+Context: "Article 5 text...\nArticle 13 text...\nArticle 4 text..."
+User Question: "What is customer due diligence?"
+   ↓
+[LLM Generation] Azure OpenAI gpt-4-turbo generates response
+Model: gpt-4-turbo-preview
+Temperature: 0.2 (low randomness, factual)
+   ↓
+[Response Parsing]
+- Extract answer text
+- Identify citations from response
+- Format as JSON with scores
+```
+
+### Configuration
+
+```env
+# Environment variables for LLM
+AZURE_OPENAI_ENDPOINT=https://your-instance.openai.azure.com/
+AZURE_OPENAI_KEY=your-api-key
+AZURE_OPENAI_DEPLOYMENT=your-deployment-name
+```
+
+**LLM Parameters (in `llm.py`):**
+- Model: `gpt-4-turbo-preview`
+- Temperature: `0.2` (factual, low hallucination)
+- Max Tokens: `1024`
+- Timeout: `20 seconds`
 
 ## 🎓 Bank Use Cases (Verified)
 
@@ -120,7 +303,7 @@ Check system health and data availability.
 ```json
 {
   "status": "ok",
-  "chunks": 3,
+  "chunks": 35,
   "index_ready": true
 }
 ```
@@ -128,7 +311,7 @@ Check system health and data availability.
 ### Ask Question - `POST /ask`
 Submit a regulatory question and receive an answer with citations.
 
-**Request:**
+**Request Schema:**
 ```json
 {
   "question": "What is customer due diligence?",
@@ -136,20 +319,46 @@ Submit a regulatory question and receive an answer with citations.
 }
 ```
 
-**Response:**
+**Request Validation:**
+- `question`: String, 5-1000 characters, required
+- `top_k`: Integer, 1-10, optional (default: 3)
+
+**Response Schema:**
 ```json
 {
-  "answer": "Answer: Customer due diligence measures include...\nCitations: AMLD_EXCERPT (Article 13)",
+  "answer": "Answer: Customer due diligence measures include verification of identity...\nCitations: Article 5; Article 13",
   "citations": [
-    {"doc": "AMLD_EXCERPT", "section": "Article 13"}
+    {
+      "doc": "EU Directive 2015/849",
+      "section": "Article 5 - Customer Due Diligence Measures"
+    },
+    {
+      "doc": "Regulation (EU) 2016/679",
+      "section": "Article 13 - Information to be Provided"
+    }
   ],
-  "scores": [0.5001]
+  "scores": [0.543, 0.412, 0.298]
 }
 ```
 
-**Parameters:**
-- `question` (required): The regulatory question to answer
-- `top_k` (optional, default=3): Number of source chunks to retrieve
+**Response Fields:**
+- `answer`: String containing AI-generated answer + citations (format: text + "\nCitations: source1; source2")
+- `citations`: Array of objects with doc name and section reference
+- `scores`: Array of cosine similarity scores (0.0-1.0) for each retrieved chunk
+
+**Error Response (400):**
+```json
+{
+  "detail": "Question must be between 5 and 1000 characters"
+}
+```
+
+**Error Response (500):**
+```json
+{
+  "detail": "Failed to generate answer: [LLM error details]"
+}
+```
 
 ## 📖 Interactive Documentation
 
@@ -192,31 +401,38 @@ The test suite includes:
 
 ```
 reg-nav-mvp/
-├── app.py                  # Main FastAPI application
-├── llm.py                  # Azure OpenAI client and LLM calls
-├── data.txt                # Regulatory document chunks
-├── requirements.txt        # Python dependencies
-├── .env                    # Environment variables (not in git)
-├── .env.example           # Environment template
-├── .gitignore             # Git ignore rules
-├── demo_logging.py        # Logging demonstration script
-├── LOGGING.md             # Logging documentation
-├── README.md              # This file
+├── app.py                      # Main FastAPI application (288 lines)
+│   ├── load_chunks()          # Parse data.txt
+│   ├── ChunkRetriever class   # TF-IDF vectorization & cosine similarity
+│   ├── /health endpoint       # Status check
+│   └── /ask endpoint          # Main Q&A route
+├── llm.py                      # Azure OpenAI integration (158 lines)
+│   ├── _get_client()          # Lazy Azure OpenAI client init
+│   └── call_llm()             # LLM API call with context
+├── data.txt                    # Regulatory documents source (35 chunks)
+│   └── Format: [DOC] Name | Section / Text content...
+├── requirements.txt            # Dependencies
+├── .env                        # Credentials (gitignored)
+├── .env.example               # Template
+├── .gitignore                 # Don't commit .env, __pycache__/
+├── demo_logging.py            # Logging examples
+├── LOGGING.md                 # Logging guide
+├── README.md                  # This file
 └── tests/
-    ├── test_dependencies.py  # Dependency smoke tests
-    └── test_app.py           # Application tests
+    ├── test_dependencies.py   # Import verification
+    └── test_app.py           # Integration tests
 ```
 
 ## 🔧 Technology Stack
 
-| Component | Technology | Version |
-|-----------|-----------|---------|
-| Web Framework | FastAPI | 0.115.0 |
-| ASGI Server | Uvicorn | 0.30.6 |
-| Data Validation | Pydantic | 2.8.2 |
-| ML/Retrieval | scikit-learn | 1.5.1 |
-| LLM Integration | OpenAI SDK | 1.40.6 |
-| Environment | python-dotenv | (latest) |
+| Component | Technology | Version | Purpose |
+|-----------|-----------|---------|---------|
+| Web Framework | FastAPI | 0.115.0 | HTTP API, automatic documentation |
+| ASGI Server | Uvicorn | 0.30.6 | Production-grade async server |
+| Data Validation | Pydantic | 2.8.2 | Request/response schema validation |
+| ML/Retrieval | scikit-learn | 1.5.1 | TF-IDF vectorization, cosine similarity |
+| LLM SDK | OpenAI | 1.40.6 | Azure OpenAI API client |
+| Environment | python-dotenv | (latest) | .env file loading |
 
 ## 📊 Logging and Monitoring
 
