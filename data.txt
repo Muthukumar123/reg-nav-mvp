@@ -57,3 +57,48 @@ Obliged entities shall screen customers and beneficiaries against applicable EU 
 
 [DOC] EU Directive 2015/849 | Article 24 - Terrorism Financing Prevention
 Member States shall take measures to prevent the use of their financial systems for terrorist financing. These measures shall include the identification and tracing of terrorist assets, the application of sanctions, and the reporting of suspected terrorist financing to competent authorities. Member States shall cooperate with the EU and international partners on terrorism financing prevention.
+
+[DOC] Regulation (EU) 2016/679 | Article 1 - Subject Matter and Objectives
+This Regulation lays down rules relating to the protection of natural persons with regard to the processing of personal data. This Regulation protects fundamental rights and freedoms of natural persons, in particular their right to the protection of personal data. The rules must take account of the recognition of the right to the protection of personal data.
+
+[DOC] Regulation (EU) 2016/679 | Article 5 - Principles Relating to Processing of Personal Data
+Personal data shall be processed lawfully, fairly and transparently in relation to the data subject. Personal data shall be collected for specified, explicit and legitimate purposes and not further processed in a manner that is incompatible with those purposes. Personal data shall be adequate, relevant and limited to what is necessary in relation to the purposes for which they are processed. The controller shall be responsible for implementing data protection by design and by default measures taken at any stage.
+
+[DOC] Regulation (EU) 2016/679 | Article 6 - Lawfulness of Processing
+Processing shall be lawful only if and to the extent that at least one of the following applies: the data subject has given consent to the processing of their personal data for one or more specific purposes; processing is necessary for the performance of a contract; processing is necessary for compliance with a legal obligation; processing is necessary to protect the vital interests of the data subject or another natural person; processing is necessary for the performance of a task carried out in the public interest; processing is necessary for the purposes of the legitimate interests pursued by the controller or by a third party.
+
+[DOC] Regulation (EU) 2016/679 | Article 13 - Information to be Provided Where Personal Data are Collected from the Data Subject
+Where personal data relating to a data subject are collected from the data subject, the controller shall provide the data subject with at least the following information: the identity and the contact details of the controller; the purposes of the processing for which the personal data are intended as well as the legal basis for the processing; the recipients or categories of recipients of the personal data, if any; information about the right to request access to personal data; information about the right to rectification or erasure.
+
+[DOC] Regulation (EU) 2016/679 | Article 32 - Security of Processing
+Taking into account the state of the art, the costs of implementation and the nature, scope, context and purposes of processing as well as the risks of varying likelihood and severity, the controller and processor shall implement appropriate technical and organisational measures to ensure a level of security appropriate to the risk, including inter alia as appropriate encryption and the ability to ensure the ongoing confidentiality, integrity, availability and resilience of processing systems and services.
+
+[DOC] Directive (EU) 2015/2366 | Article 1 - Subject Matter
+This Directive establishes rules on the provision of payment services in the internal market. It aims to create a harmonised framework for payment services in order to facilitate the provision of cross-border payment services and to ensure consumer protection and the safety of payments.
+
+[DOC] Directive (EU) 2015/2366 | Article 4 - Definitions
+Payment service provider means a natural or legal person providing payment services. Payment account means an account held in the name of one or more payment service users which is used for the execution of payment transactions. Payment transaction means an action initiated by a payer or on the payer's behalf or by a payee to place funds at the disposal of a payee or to instruct a payment service provider to place funds at the disposal of a payee.
+
+[DOC] Directive (EU) 2015/2366 | Article 5 - Authorisation of Payment Service Providers
+Payment service providers shall be authorised by the competent authorities of the Member State in which they are established. Competent authorities shall only authorise payment service providers that satisfy the requirements laid down in this Directive and in the implementing technical standards. Payment service providers shall at all times maintain own funds and mechanisms for safeguarding funds to protect against risks.
+
+[DOC] Directive (EU) 2015/2366 | Article 38 - Strong Customer Authentication
+Payment service providers shall require strong customer authentication when a payer accesses its payment account online, when a payer initiates an electronic payment transaction, or when a payer carries out any action through a remote channel which may imply a risk of fraud or unauthorised payment.
+
+[DOC] Directive (EU) 2015/2366 | Article 62 - Liability for Unauthorised Payment Transactions
+A payer shall be liable for unauthorised payment transactions up to a maximum of fifty euros. The payer shall bear the losses resulting from unauthorised payment transactions if the payer has, with intent or gross negligence, failed to keep safe the personalised security credentials or notify the payment service provider without undue delay.
+
+[DOC] Directive 2014/65/EU | Article 1 - Subject Matter
+This Directive establishes rules on the provision of investment services and regulated activities on financial instruments in the internal market. It lays down rules concerning the prudential supervision of investment firms and the organisation of markets in financial instruments.
+
+[DOC] Directive 2014/65/EU | Article 2 - Definitions
+An investment firm means any natural or legal person whose occupation or business is the provision of investment services and/or the performance of investment activities on a professional basis. A financial instrument means any contract that creates a financial asset for one party and a financial liability or equity instrument for the other party.
+
+[DOC] Directive 2014/65/EU | Article 16 - General Principles
+Investment firms shall act honestly, fairly and professionally in accordance with the best interests of their clients. Investment firms shall manage conflicts of interest in a way that ensures that the fair treatment of clients is not compromised. Investment firms shall be required to ensure that relevant persons obtain and maintain the knowledge and competence required to support the client in understanding the nature and risks of investment services and financial instruments.
+
+[DOC] Directive 2014/65/EU | Article 25 - Suitability
+Before providing personalised recommendations or discretionary portfolio management services, investment firms shall obtain the necessary information regarding the client's knowledge, experience, financial situation and investment objectives in order to make a proper assessment of the suitability of any advice or submission of recommendations that is to be provided.
+
+[DOC] Directive 2014/65/EU | Article 37 - Inducements
+Investment firms may pay or be paid inducements from third parties which do not contravene the obligation to act in accordance with the best interests of the client. Any such payments shall be made transparent to the client and shall be designed to enhance the quality of the relevant service to the client.
