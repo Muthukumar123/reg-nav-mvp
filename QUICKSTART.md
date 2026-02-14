@@ -116,7 +116,7 @@ This will run several example queries and show you the system in action.
 
 ## What's Next?
 
-- 📖 Read the full [README](../README.md) for detailed features
+- 📖 Read the full [README](README.md) for detailed features
 - 🔌 Check the [API Documentation](docs/API.md) for all endpoints
 - 🚀 See [Deployment Guide](docs/DEPLOYMENT.md) for production deployment
 - 📝 Add your own regulatory documents using the ingestion API

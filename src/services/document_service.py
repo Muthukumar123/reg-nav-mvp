@@ -1,7 +1,7 @@
 """Document ingestion service for regulatory documents."""
 import os
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import uuid
 from datetime import datetime
 
