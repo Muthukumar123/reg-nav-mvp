@@ -61,12 +61,27 @@ def _get_client():
                 logger.error(error_msg)
                 raise ValueError(error_msg)
             
-            _client = AzureOpenAI(
-                api_key=os.environ["AZURE_OPENAI_KEY"],
-                azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-                api_version="2024-02-15-preview",
-            )
-            logger.info("Azure OpenAI client initialized successfully")
+            # Initialize Azure OpenAI client with required parameters
+            # Note: Using explicit parameters to avoid version compatibility issues
+            try:
+                _client = AzureOpenAI(
+                    api_key=os.environ["AZURE_OPENAI_KEY"],
+                    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+                    api_version="2024-02-15-preview",
+                    timeout=30.0,  # Add explicit timeout
+                    max_retries=2,  # Add retry configuration
+                )
+                logger.info("Azure OpenAI client initialized successfully")
+            except TypeError as te:
+                # Handle version compatibility issues with 'proxies' parameter
+                logger.warning(f"Retrying client initialization with basic parameters: {str(te)}")
+                _client = AzureOpenAI(
+                    api_key=os.environ["AZURE_OPENAI_KEY"],
+                    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+                    api_version="2024-02-15-preview",
+                )
+                logger.info("Azure OpenAI client initialized with basic parameters")
+                
         except Exception as e:
             logger.error(f"Failed to initialize Azure OpenAI client: {str(e)}")
             raise
