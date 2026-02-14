@@ -1,8 +1,59 @@
-[DOC] AMLD_EXCERPT | Article 13
-Customer due diligence measures shall include identifying the customer and verifying the customer's identity, and identifying the beneficial owner and taking reasonable measures to verify the beneficial owner's identity.
+[DOC] EU Directive 2015/849 | Article 1 - Subject Matter
+This Directive lays down rules concerning the prevention of the use of the financial system for the purposes of money laundering and terrorist financing. It establishes obligations for credit institutions, financial institutions, and certain natural and legal persons engaged in activities particularly susceptible to money laundering or terrorist financing.
 
-[DOC] AMLD_EXCERPT | Article 14
-Simplified due diligence may be applied where the risk of money laundering or terrorist financing is lower, subject to conditions set by the relevant framework.
+[DOC] EU Directive 2015/849 | Article 2 - Definitions
+For the purposes of this Directive, the following definitions apply: Money laundering means any of the conduct set out in Article 1 of Directive 2005/60/EC. Terrorist financing means the provision or collection of funds, by any means, with the intention that they be used or in the knowledge that they are to be used to carry out a terrorist offense.
 
-[DOC] AMLD_EXCERPT | Article 18
-Enhanced due diligence measures shall be applied in higher-risk situations to manage and mitigate those risks.
+[DOC] EU Directive 2015/849 | Article 5 - Customer Due Diligence
+Member States shall ensure that obliged entities apply customer due diligence measures. Customer due diligence shall consist of: identification of the customer and verification of the customer's identity on the basis of documents, data or information obtained from a reliable and independent source.
+
+[DOC] EU Directive 2015/849 | Article 6 - Enhanced Due Diligence
+Member States shall ensure that obliged entities apply enhanced due diligence measures in higher-risk situations. Enhanced due diligence shall include at least the following measures: conducting enhanced identification and verification of customers, determining the purpose and nature of business relationships, conducting enhanced ongoing monitoring of the business relationship.
+
+[DOC] EU Directive 2015/849 | Article 7 - Simplified Due Diligence
+Member States may permit obliged entities to apply simplified measures where the risk of money laundering or terrorist financing is low. Member States shall lay down conditions for the application of simplified due diligence based on country risk, product risk, customer risk, and transaction risk.
+
+[DOC] EU Directive 2015/849 | Article 8 - Beneficial Ownership
+Obliged entities shall take reasonable measures to identify and verify the beneficial owner. For customers that are legal entities, obliged entities shall understand the ownership and control structure of the customer. Member States shall ensure that their registers of beneficial owners contain adequate details of the beneficial ownership of legal entities.
+
+[DOC] EU Directive 2015/849 | Article 10 - Ongoing Monitoring
+Member States shall ensure that obliged entities apply ongoing monitoring to their business relationships. Such monitoring shall comprise scrutiny of transactions undertaken throughout the course of the business relationship to ensure that they are consistent with the obliged entity's knowledge of the customer, the customer's business and risk profile.
+
+[DOC] EU Directive 2015/849 | Article 12 - Politically Exposed Persons
+Member States shall ensure that obliged entities apply enhanced due diligence to customers who are, or have been, entrusted with prominent public functions, as well as to their family members and closely associated persons. Obliged entities shall apply measures to determine whether a customer is a politically exposed person.
+
+[DOC] EU Directive 2015/849 | Article 13 - Third-Country Transfers
+Member States shall ensure that obliged entities do not transfer funds unless they ensure that adequate sanctions screening and beneficial ownership information is available to the Fund Transfer Regulation. Member States shall take measures to ensure that fund transfers contain complete originator and beneficiary information.
+
+[DOC] EU Directive 2015/849 | Article 14 - Record Keeping
+Member States shall ensure that obliged entities keep records on the facts, evidence and supporting documentation obtained through customer due diligence, for a period of at least five years. Member States shall take appropriate measures to ensure that financial intelligence units have access to these records.
+
+[DOC] EU Directive 2015/849 | Article 15 - Suspicious Transaction Reporting
+Member States shall ensure that obliged entities report suspicious transactions to the competent FIU without delay and in the manner prescribed by national law. Failure to report suspicious activity constitutes a breach of the Directive's requirements. Reports shall include full details of the suspected activity and relevant customer information.
+
+[DOC] EU Directive 2015/849 | Article 16 - Sanctions and Compliance
+Member States shall lay down rules on penalties applicable to breaches of the national provisions adopted pursuant to this Directive. Penalties shall be effective, proportionate and dissuasive. Member States shall inform the Commission of these penalties and any subsequent amendments thereto.
+
+[DOC] EU Directive 2015/849 | Article 17 - Competent Authorities
+Member States shall designate the competent authorities responsible for the implementation and application of the measures necessary to comply with this Directive. Member States shall ensure appropriate cooperation between competent authorities for the purposes of this Directive, including the exchange of information.
+
+[DOC] EU Directive 2015/849 | Article 18 - Financial Intelligence Units
+Member States shall ensure that their FIU is independent and autonomous in the execution of its functions. The FIU shall be able to cooperate with other FIUs, EUROPOL, and international partners. FIUs shall have direct access to financial, administrative and criminal records.
+
+[DOC] EU Directive 2015/849 | Article 19 - High-Risk Third Countries
+The Commission shall establish a list of third countries identified as having strategic AML/CTF deficiencies. Member States shall apply stricter customer due diligence for customers and financial institutions from these high-risk third countries. Enhanced monitoring and reporting requirements apply for transactions involving high-risk jurisdictions.
+
+[DOC] EU Directive 2015/849 | Article 20 - Obliged Entities
+Obliged entities include: credit institutions, financial institutions, auditors, external accountants and tax advisors, appraisers, real estate agents, casinos, providers of gambling services, and traders in goods dealing in cash. Member States may extend the scope to include other professions and entities based on risk assessment.
+
+[DOC] EU Directive 2015/849 | Article 21 - Powers of Member States
+Member States shall ensure that competent authorities have the power to obtain any information relevant to the performance of their functions. Competent authorities shall have power to cooperate with each other across borders. Member States shall ensure that obliged entities cooperate fully with competent authorities in the investigation of suspected money laundering.
+
+[DOC] EU Directive 2015/849 | Article 22 - Exemptions and Applications
+Member States may exempt certain obliged entities from the requirements of this Directive based on risk assessment. Exemptions shall not apply to those engaged in higher-risk activities. Exemptions must be justified by objective grounds related to anti-money laundering effectiveness.
+
+[DOC] EU Directive 2015/849 | Article 23 - Sanctions Screening
+Obliged entities shall screen customers and beneficiaries against applicable EU and UN sanctions lists. Screening shall take place before establishing business relationships and on an ongoing basis. Member States shall ensure that sanctions violations are reported to relevant authorities without delay.
+
+[DOC] EU Directive 2015/849 | Article 24 - Terrorism Financing Prevention
+Member States shall take measures to prevent the use of their financial systems for terrorist financing. These measures shall include the identification and tracing of terrorist assets, the application of sanctions, and the reporting of suspected terrorist financing to competent authorities. Member States shall cooperate with the EU and international partners on terrorism financing prevention.
