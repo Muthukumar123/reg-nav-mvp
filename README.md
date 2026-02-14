@@ -7,6 +7,8 @@ A FastAPI-based Retrieval-Augmented Generation (RAG) application for answering r
 - **Retrieval-Augmented Generation (RAG)**: Combines TF-IDF-based retrieval with Azure OpenAI for accurate, source-based answers
 - **Citation Tracking**: Every answer includes specific document and section citations
 - **Smart Filtering**: Automatically returns "NOT FOUND" for irrelevant queries
+- **Weak Chunk Filtering**: Removes low-confidence matches (< 0.05 similarity) to prevent false positives
+- **Refusal Behavior**: Refuses to answer out-of-scope questions to prevent hallucination
 - **RESTful API**: FastAPI-powered endpoints with automatic OpenAPI documentation
 - **Comprehensive Logging**: Detailed tracing and error handling throughout the application
 - **Interactive Documentation**: Built-in Swagger UI and ReDoc interfaces

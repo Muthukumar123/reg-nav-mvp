@@ -109,9 +109,15 @@ except Exception as e:
 
 # ---------- Build a simple retrieval index ----------
 try:
-    # Initialize TF-IDF vectorizer with English stop words filtered out
-    # TF-IDF converts text into numeric vectors for efficient similarity matching
-    VECTORIZER = TfidfVectorizer(stop_words="english")
+    # Initialize TF-IDF vectorizer with minimal filtering
+    # Use None for stop_words to keep more terms, increase max_df to handle common terms
+    VECTORIZER = TfidfVectorizer(
+        stop_words=None,  # Don't filter stop words - we need them!
+        min_df=1,         # Accept even single-occurrence terms
+        analyzer='word',
+        lowercase=True,
+        token_pattern=r'(?u)\b\w+\b'
+    )
     # fit_transform() learns vocabulary and creates sparse matrix (memory efficient)
     MATRIX = VECTORIZER.fit_transform([c["text"] for c in CHUNKS])
     logger.info(f"Built TF-IDF index with shape {MATRIX.shape}")
@@ -216,18 +222,19 @@ def ask(req: AskRequest):
         qv = VECTORIZER.transform([req.question])
         # Compute cosine similarity between query and all chunks (0-1 scale)
         sims = cosine_similarity(qv, MATRIX).flatten()
-        # Get indices of top-k chunks sorted by similarity (descending)
-        idxs = sims.argsort()[::-1][: max(1, req.top_k)]
-
+        # Get indices of chunks sorted by similarity (descending)
+        sorted_indices = sims.argsort()[::-1]
+        # Filter to only keep chunks with similarity > 0.05 (removes weak matches)
+        idxs = [i for i in sorted_indices if sims[i] > 0.05][:req.top_k]
+        
         # Extract best similarity score for relevance filtering
         best_score = float(sims[idxs[0]]) if len(idxs) else 0.0
         logger.info(f"Best similarity score: {best_score:.4f}")
         
-        # FILTERING PHASE: Check relevance threshold (0.12) to avoid spurious answers
-        # Threshold prevents the LLM from generating answers for questions
-        # that are not related to regulatory documents at all
-        if best_score < 0.12:
-            logger.info("Query below relevance threshold, returning NOT FOUND")
+        # FILTERING PHASE: Reject queries with no meaningful matches
+        # This prevents hallucination by refusing to answer out-of-scope questions
+        if best_score < 0.05 or not idxs:
+            logger.info("Query has no matching sources, returning NOT FOUND")
             return {
                 "answer": "NOT FOUND IN SOURCES.",
                 "citations": [],
