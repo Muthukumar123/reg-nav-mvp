@@ -137,8 +137,7 @@ def call_llm(question: str, sources: str) -> str:
         logger.debug(f"Using deployment: {deployment}")
         
         resp = client.chat.completions.create(
-            model=deployment,
-            temperature=0.0,
+            model=deployment,            
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": f"Question:\n{question}\n\nSources:\n{sources}"},
