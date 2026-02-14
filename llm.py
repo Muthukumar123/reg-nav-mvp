@@ -1,18 +1,52 @@
+"""
+Azure OpenAI LLM Integration Module
+
+Provides client initialization and API calls to Azure OpenAI service.
+Handles authentication, error handling, and LLM response formatting.
+
+Features:
+- Lazy singleton pattern for client initialization
+- Environment variable validation
+- Comprehensive error handling and logging
+- Token usage tracking for monitoring
+"""
+
 import logging
 import os
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 
-# Configure logging
+# Configure logging for this module
 logger = logging.getLogger(__name__)
 
-# Load environment variables from .env file
+# Load environment variables from .env file at module import time
+# This must happen before accessing environment variables
 load_dotenv()
 
-_client = None
+_client = None  # Module-level singleton for Azure OpenAI client
+
 
 def _get_client():
-    """Initialize and return the Azure OpenAI client (lazy singleton)."""
+    """Initialize and return the Azure OpenAI client using lazy singleton pattern.
+    
+    On first call, validates that all required environment variables are set,
+    then creates and caches the client for subsequent calls. This approach:
+    - Defers initialization until actually needed (lazy loading)
+    - Prevents client creation errors from affecting imports
+    - Ensures single client instance across the application
+    
+    Required environment variables:
+    - AZURE_OPENAI_KEY: API authentication key
+    - AZURE_OPENAI_ENDPOINT: Azure service endpoint URL
+    - AZURE_OPENAI_DEPLOYMENT: Deployment/model name
+    
+    Returns:
+        AzureOpenAI: Authenticated Azure OpenAI client instance
+        
+    Raises:
+        ValueError: If required environment variables are missing
+        Exception: If client initialization fails
+    """
     global _client
     if _client is None:
         try:
@@ -38,6 +72,10 @@ def _get_client():
             raise
     return _client
 
+
+# LLM SYSTEM PROMPT: Enforces source-based answers for regulatory compliance
+# This prompt ensures the LLM only uses retrieved documents and doesn't
+# hallucinate or use external knowledge that could violate compliance
 SYSTEM_PROMPT = """You are a Regulation Navigator for a bank.
 
 Rules:

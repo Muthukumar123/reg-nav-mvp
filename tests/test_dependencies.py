@@ -1,3 +1,14 @@
+"""Dependency Validation Tests
+
+Smoke tests to ensure all required packages are installed with correct versions.
+These tests verify:
+1. All dependencies can be imported
+2. Installed versions match requirements.txt
+3. Core functionality works (FastAPI, sklearn models, etc.)
+
+Run with: python -m unittest tests.test_dependencies -v
+"""
+
 import unittest
 
 import fastapi
@@ -10,7 +21,10 @@ from sklearn.linear_model import LogisticRegression
 
 
 class DependencySmokeTests(unittest.TestCase):
+    """Verify project dependencies are correctly installed."""
+    
     def test_imports(self):
+        """Test that all required packages can be imported successfully."""
         self.assertTrue(hasattr(fastapi, "__version__"))
         self.assertTrue(hasattr(uvicorn, "__version__"))
         self.assertTrue(hasattr(pydantic, "__version__"))
@@ -18,6 +32,7 @@ class DependencySmokeTests(unittest.TestCase):
         self.assertTrue(hasattr(openai, "__version__"))
 
     def test_expected_versions(self):
+        """Verify that installed versions match pinned requirements.txt."""
         self.assertEqual(fastapi.__version__, "0.115.0")
         self.assertEqual(uvicorn.__version__, "0.30.6")
         self.assertEqual(pydantic.__version__, "2.8.2")

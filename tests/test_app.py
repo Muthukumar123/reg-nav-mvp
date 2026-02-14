@@ -1,3 +1,24 @@
+"""Application Integration Tests
+
+Comprehensive test suite for the Regulation Navigator FastAPI application.
+Tests cover:
+- Data loading and document chunk parsing
+- System health checks
+- API endpoint functionality (GET /, GET /health, POST /ask)
+- Request validation and error handling
+- LLM integration and mocking
+- TF-IDF retrieval accuracy
+- Citation tracking and similarity scoring
+
+Test Coverage:
+- 3 data loading tests
+- 1 health check test
+- 8 /ask endpoint tests
+- 2 retrieval mechanism tests
+
+Run with: python -m unittest tests.test_app -v
+"""
+
 import unittest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
@@ -6,6 +27,8 @@ from app import app, load_chunks, CHUNKS, VECTORIZER, MATRIX
 
 
 class TestDataLoading(unittest.TestCase):
+    """Test data loading and initialization."""
+    
     def test_load_chunks_from_data_file(self):
         """Test that chunks are loaded and parsed correctly from data.txt"""
         chunks = load_chunks("data.txt")
