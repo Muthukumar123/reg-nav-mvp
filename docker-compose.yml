@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  regulation-navigator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - REGULATIONS_FILE=data.txt
+      - LOG_LEVEL=info
+      - AZURE_OPENAI_KEY=${AZURE_OPENAI_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
+    volumes:
+      # Mount data file (read-only)
+      - ./data.txt:/app/data.txt:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    container_name: regulation-navigator-mvp
+
+  # Optional: Add Nginx reverse proxy for production-like setup
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - regulation-navigator
+    container_name: regulation-navigator-proxy
+    profiles:
+      - "with-proxy"
+
+networks:
+  default:
+    name: regulation-navigator

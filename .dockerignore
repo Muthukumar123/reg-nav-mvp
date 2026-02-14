@@ -1,0 +1,64 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv
+venv/
+ENV/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Tests
+.pytest_cache
+.coverage
+htmlcov/
+
+# Documentation
+*.md
+*.txt
+!requirements.txt
+!data.txt
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Kubernetes
+*.yaml
+*.yml
+!docker-compose.yml
+
+# Misc
+.dockerignore
+Dockerfile*
+docker-compose*
