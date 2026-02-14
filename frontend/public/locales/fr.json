@@ -1,0 +1,28 @@
+{
+  "title": "Navigateur Réglementaire",
+  "subtitle": "Votre guide intelligent de la conformité réglementaire de l'UE",
+  "placeholder": "Posez une question sur les réglementations de l'UE...",
+  "askButton": "Demander",
+  "loading": "Analyse de votre question en cours...",
+  "themeToggle": "Basculer le thème",
+  "languageSelect": "Langue",
+  "sources": "Sources",
+  "relevance": "Pertinence",
+  "noResults": "Aucun résultat trouvé",
+  "error": "Une erreur s'est produite",
+  "tryAgain": "Réessayer",
+  "examples": {
+    "title": "Essayez de demander:",
+    "gdpr": "Qu'est-ce que le RGPD?",
+    "psd2": "Comment me conformer à DSP2?",
+    "aml": "Qu'est-ce que la diligence raisonnable relative aux clients?",
+    "mifid": "Quels sont les exigences MIFID II?"
+  },
+  "welcome": "Bienvenue dans le Navigateur Réglementaire",
+  "description": "Posez des questions sur les réglementations financières de l'UE, le RGPD, l'AML, la DSP2 et bien plus. Obtenez des réponses instantanées alimentées par l'IA.",
+  "copied": "Copié dans le presse-papiers",
+  "share": "Partager",
+  "feedback": "Commentaires",
+  "about": "À propos",
+  "footer": "Alimenté par l'IA • Construit avec expertise réglementaire"
+}

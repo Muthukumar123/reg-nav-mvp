@@ -1,0 +1,21 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "env": [
+    {
+      "key": "NEXT_PUBLIC_API_URL",
+      "description": "URL of the Regulation Navigator API backend",
+      "example": "https://eu-regulatory-navigator-esaxgvahdsgpffgn.westeurope-01.azurewebsites.net",
+      "value": "http://localhost:8000"
+    }
+  ],
+  "functions": {
+    "api": {
+      "memory": 1024,
+      "timeout": 60
+    }
+  }
+}

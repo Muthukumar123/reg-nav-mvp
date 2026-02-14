@@ -1,0 +1,28 @@
+{
+  "title": "Regelgeving Navigator",
+  "subtitle": "Uw intelligente gids voor EU-regelgeving over naleving",
+  "placeholder": "Stel een vraag over EU-regelgeving...",
+  "askButton": "Vragen",
+  "loading": "Uw vraag analyseren...",
+  "themeToggle": "Thema wisselen",
+  "languageSelect": "Taal",
+  "sources": "Bronnen",
+  "relevance": "Relevantie",
+  "noResults": "Geen resultaten gevonden",
+  "error": "Er is een fout opgetreden",
+  "tryAgain": "Opnieuw proberen",
+  "examples": {
+    "title": "Probeer te vragen:",
+    "gdpr": "Wat is GDPR?",
+    "psd2": "Hoe voldoe ik aan PSD2?",
+    "aml": "Wat is customer due diligence?",
+    "mifid": "Wat zijn MiFID II-vereisten?"
+  },
+  "welcome": "Welkom bij Regelgeving Navigator",
+  "description": "Stel vragen over EU-regelgeving voor financiën, GDPR, AML, PSD2 en meer. Krijg instant antwoorden voorzien van AI.",
+  "copied": "Gekopieerd naar klembord",
+  "share": "Delen",
+  "feedback": "Feedback",
+  "about": "Over ons",
+  "footer": "Aangestuurd door AI • Gebouwd met regelgevingsdeskundigheid"
+}

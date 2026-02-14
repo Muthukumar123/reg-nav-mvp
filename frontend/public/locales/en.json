@@ -1,0 +1,28 @@
+{
+  "title": "Regulation Navigator",
+  "subtitle": "Your intelligent guide to EU regulatory compliance",
+  "placeholder": "Ask a question about EU regulations...",
+  "askButton": "Ask",
+  "loading": "Analyzing your question...",
+  "themeToggle": "Toggle theme",
+  "languageSelect": "Language",
+  "sources": "Sources",
+  "relevance": "Relevance",
+  "noResults": "No results found",
+  "error": "An error occurred",
+  "tryAgain": "Try again",
+  "examples": {
+    "title": "Try asking about:",
+    "gdpr": "What is GDPR?",
+    "psd2": "How do I comply with PSD2?",
+    "aml": "What is customer due diligence?",
+    "mifid": "What are MiFID II requirements?"
+  },
+  "welcome": "Welcome to Regulation Navigator",
+  "description": "Ask questions about EU financial regulations, GDPR, AML, PSD2, and more. Get instant answers powered by AI.",
+  "copied": "Copied to clipboard",
+  "share": "Share",
+  "feedback": "Feedback",
+  "about": "About",
+  "footer": "Powered by AI • Built with regulatory expertise"
+}
