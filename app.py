@@ -126,6 +126,7 @@ from typing import Optional, Dict
 
 from llm import call_llm
 from infrastructure.analytics import analytics
+from infrastructure.query_cache import query_cache
 
 # Configure structured logging with timestamp, logger name, and level
 logging.basicConfig(
@@ -531,6 +532,31 @@ def get_analytics(authorization: Optional[str] = Header(None)):
         logger.error(f"Analytics retrieval failed: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve analytics")
 
+@app.get("/cache-stats")
+def get_cache_stats(authorization: Optional[str] = Header(None)):
+    """Get query cache performance statistics."""
+    try:
+        # Verify token for security
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing or invalid authorization token"
+            )
+        
+        token = authorization[len("Bearer "):]
+        verify_token(token)
+        
+        logger.info("Cache statistics requested")
+        stats = query_cache.get_stats()
+        # Add explanatory message
+        stats["description"] = f"Query cache reduces LLM calls by caching similar questions. Hit rate: {stats['hit_rate_percent']}%"
+        return stats
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Cache stats retrieval failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve cache stats")
+
 @app.post("/auth/login", response_model=LoginResponse)
 def login(req: LoginRequest):
     """Login endpoint with SHA256 password verification.
@@ -760,21 +786,33 @@ def ask(req: AskRequest, authorization: Optional[str] = Header(None)):
         sources_text = "\n\n".join(sources_blocks)
         logger.info(f"Prepared {len(citations)} sources for LLM, total chars: {len(sources_text)}")
 
-        # ====== GENERATION PHASE ======
-        # Send question + retrieved sources to Azure OpenAI LLM for answer generation
-        logger.debug(f"Calling LLM with question + {len(citations)} source chunks")
-        try:
-            # call_llm() takes question and sources, returns answer string
-            # LLM will read sources and generate answer that cites them
-            # (see llm.py for configuration details)
-            llm_answer = call_llm(req.question, sources_text)
-            logger.info("LLM answer generated successfully")
-        except Exception as llm_error:
-            logger.error(f"LLM call failed: {str(llm_error)}")
-            raise HTTPException(
-                status_code=502,
-                detail=f"LLM service error: {str(llm_error)}"
-            )
+        # ====== CACHE CHECK PHASE ======
+        # Check if this question was recently answered (avoid redundant LLM calls)
+        cached_response = query_cache.get(req.question)
+        if cached_response:
+            logger.info(f"Cache hit for query (savings: ~{query_cache.get_stats()['hits']} queries)")
+            llm_answer = cached_response["answer"]
+            cache_hit = True
+        else:
+            cache_hit = False
+            # ====== GENERATION PHASE ======
+            # Send question + retrieved sources to Azure OpenAI LLM for answer generation
+            logger.debug(f"Calling LLM with question + {len(citations)} source chunks")
+            try:
+                # call_llm() takes question and sources, returns answer string
+                # LLM will read sources and generate answer that cites them
+                # (see llm.py for configuration details)
+                llm_answer = call_llm(req.question, sources_text)
+                logger.info("LLM answer generated successfully")
+                
+                # Cache the response for future similar queries
+                query_cache.set(req.question, llm_answer, citations, scores)
+            except Exception as llm_error:
+                logger.error(f"LLM call failed: {str(llm_error)}")
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"LLM service error: {str(llm_error)}"
+                )
 
         # ====== RESPONSE FORMATTING ======
         # Structure response according to AskResponse model (API contract)
@@ -794,7 +832,8 @@ def ask(req: AskRequest, authorization: Optional[str] = Header(None)):
             regulations_used=regulations_used
         )
         
-        logger.info(f"Returning response with {len(citations)} citations (duration: {query_duration:.2f}s)")
+        cache_status = "CACHE HIT ✓" if cache_hit else f"LLM call ({query_duration:.2f}s)"
+        logger.info(f"Returning response with {len(citations)} citations ({cache_status}) - {query_cache.get_stats()['hit_rate_percent']}% cache rate")
         return response
     
     except HTTPException:
