@@ -103,8 +103,7 @@ Please provide the most accurate compliance answer based on these sources."""
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=500,
-                temperature=0.3  # Low temperature for factual responses
+                max_completion_tokens=500
             )
             
             answer = response.choices[0].message.content
