@@ -21,8 +21,26 @@
   "welcome": "Welcome to Regulation Navigator",
   "description": "Ask questions about EU financial regulations, GDPR, AML, PSD2, and more. Get instant answers powered by AI.",
   "copied": "Copied to clipboard",
+  "copy": "Copy",
   "share": "Share",
   "feedback": "Feedback",
   "about": "About",
+  "close": "Close",
+  "aboutModal": {
+    "title": "About Regulation Navigator",
+    "why": "Why This Application?",
+    "whyText": "EU regulatory compliance is complex and time-consuming. Financial institutions, investment firms, and compliance professionals must navigate dozens of interconnected directives and regulations. Regulation Navigator simplifies this by providing instant answers to your compliance questions using advanced AI and comprehensive regulatory databases.",
+    "how": "How It Works",
+    "functional": "Functional Overview",
+    "functionalText": "1. You ask a question about EU regulations\n2. The system searches a comprehensive database of regulatory articles\n3. AI analyzes the most relevant regulations\n4. An answer is generated with direct citations from the source regulations\n5. You receive verified information with complete source references",
+    "technical": "Technical Architecture",
+    "technicalText": "The application uses a Retrieval-Augmented Generation (RAG) system:\n• TF-IDF Vectorization: Converts regulatory text into semantic vectors\n• Cosine Similarity: Finds the most relevant articles\n• Azure OpenAI (gpt-5-mini): Generates contextual answers\n• Token Authentication: Secure access with 2-hour tokens\n• REST API: FastAPI backend with core intelligence\n• Next.js Frontend: Modern, responsive UI with multi-language support",
+    "forWhom": "Who Will Find This Useful?",
+    "forWhomText": "✓ Compliance Officers: Find regulatory requirements quickly\n✓ Financial Institutions: Understand AML/KYC, PSD2, MiFID II\n✓ Investment Professionals: Navigate GDPR regulations\n✓ Legal Teams: Research EU directives\n✓ Consultants: Provide verified information\n✓ Regulators: Reference authentic regulatory text\n✓ Students: Learn efficiently",
+    "features": "Key Features",
+    "featuresText": "🔐 Secure Authentication\n🌍 6 Languages: EN, DE, ES, PT, FR, NL\n📚 35+ EU Regulatory Articles\n🎯 Citation-Based Answers\n🌓 Dark/Light Mode\n⚡ AI-Powered Instant Responses\n📱 Responsive Design",
+    "coverage": "Regulatory Coverage",
+    "coverageText": "• AML (Directive 2015/849)\n• GDPR (Regulation 2016/679)\n• PSD2 (Directive 2015/2366)\n• MiFID II (Directive 2014/65/EU)\n• Basel III & Banking Rules\n• Sustainability (Regulation 2019/2088)\n• Crisis Management (Directive 2014/59/EU)"
+  },
   "footer": "Powered by AI • Built with regulatory expertise"
 }

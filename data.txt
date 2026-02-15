@@ -102,3 +102,72 @@ Before providing personalised recommendations or discretionary portfolio managem
 
 [DOC] Directive 2014/65/EU | Article 37 - Inducements
 Investment firms may pay or be paid inducements from third parties which do not contravene the obligation to act in accordance with the best interests of the client. Any such payments shall be made transparent to the client and shall be designed to enhance the quality of the relevant service to the client.
+
+[DOC] EU Directive 2013/36/EU | Article 1 - Subject Matter
+This Directive establishes prudential requirements for credit institutions and investment firms regarding own funds, governance structures, remuneration policies, and liquidity. It creates a harmonized regulatory framework for the prudential supervision of credit institutions across the EU and establishes the European Banking Authority framework.
+
+[DOC] EU Directive 2013/36/EU | Article 23 - Composition of Own Funds
+Credit institutions shall have Own Funds composed of Tier 1 capital and Tier 2 capital. Tier 1 capital comprises Common Equity Tier 1 (CET1) and Additional Tier 1 (AT1) capital. Tier 2 capital shall comprise capital instruments and subordinated claims meeting the regulatory requirements and instruments included in an institution's capital buffer.
+
+[DOC] EU Directive 2013/36/EU | Article 74 - Internal Governance
+Credit institutions shall have robust governance arrangements, including a clear organisational structure with effective and prudent management. The management body shall have overall responsibility for the governance of the institution. Remuneration policies shall be consistent with and promote sound and effective risk management and shall not encourage excessive risk-taking.
+
+[DOC] EU Directive 2013/36/EU | Article 95 - Liquidity Requirements
+Member States shall ensure that credit institutions maintain adequate liquidity buffers to ensure they can meet their payment obligations. Credit institutions shall calculate their liquidity coverage ratio taking into account the stressed scenario set out in the regulatory technical standards. Member States shall not impose liquidity requirements that are stricter than those specified in Union law.
+
+[DOC] EU Regulation 575/2013 | Article 1 - Subject Matter
+This Regulation establishes uniform prudential rules applicable to credit institutions and investment firms throughout the Union. The Regulation specifies minimum capital requirements to ensure the safety and soundness of credit institutions and investment firms. It establishes requirements for own funds, capital buffers, and leverage ratios.
+
+[DOC] EU Regulation 575/2013 | Article 72 - Common Equity Tier 1 Items
+Common Equity Tier 1 items comprise instruments and reserves that meet the following conditions: they are issued directly by the institution, they represent the most subordinated claim on the assets or income of the institution, and they provide full flexibility in the distribution of earnings and capital repayment. Common Equity Tier 1 items shall not include hybrid instruments or debt securities.
+
+[DOC] EU Regulation 575/2013 | Article 425 - Operational Risk
+Credit institutions shall calculate the capital requirement for operational risk using an Approach chosen by the competent authorities. The standardized approach allocates capital requirements based on the institution's gross income in specific business lines. The advanced measurement approaches shall be based on the institution's own internal estimates of operational risk losses.
+
+[DOC] EU Regulation (EU) 2019/2088 | Article 1 - Subject Matter
+This Regulation establishes transparency requirements for the financial market participants and financial advisors regarding the integration of sustainability risks and the promotion of environmental and social characteristics or sustainable investment objectives. It aims to improve transparency of financial products regarding environmental, social and governance (ESG) factors and to prevent greenwashing.
+
+[DOC] EU Regulation (EU) 2019/2088 | Article 4 - Transparency of the Integration of Sustainability Risks
+Financial market participants shall make public how they integrate sustainability risks in their investment decision-making process. Financial market participants shall disclose how they ensure that the persons involved in the investment decision-making process are not prevented from properly integrating sustainability considerations. Financial advisors shall inform clients about how sustainability risks are integrated when providing advice.
+
+[DOC] EU Regulation (EU) 2019/2088 | Article 8 - Promotion of Environmental or Social Characteristics
+Financial market participants shall make clear and accessible information available on how a financial product promotes environmental or social characteristics. The information shall describe how the financial product will be invested to meet the promoted characteristics and shall indicate whether investments are aligned with sustainable development objectives.
+
+[DOC] EU Directive 2014/59/EU | Article 1 - Objectives
+This Directive creates a common framework for the resolution of failing credit institutions and investment firms in the Union. The objectives of resolution are to maintain financial stability and continuity of critical functions, to minimize public expenses on banking bailouts, and to protect depositors and investors through deposit guarantee and investor compensation schemes.
+
+[DOC] EU Directive 2014/59/EU | Article 21 - Resolution Principles
+Resolution authorities shall apply resolution tools and powers with a view to achieving the resolution objectives. The resolution action shall be taken as soon as it becomes apparent that an institution is likely to fail. Resolution authorities shall apply the write-down of capital instruments and bail-in of unsecured liabilities of the institution.
+
+[DOC] EU Directive 2014/59/EU | Article 36 - Bail-In Powers
+Resolution authorities shall have the power to reduce the amount owed to creditors by write-down or conversion of liabilities of a failing institution. The bail-in shall be applied in accordance with the creditor hierarchy except for certain protected liabilities such as covered deposits and privileged deposits.
+
+[DOC] EU Regulation 1093/2010 | Article 1 - Establishment of the European Banking Authority
+The European Banking Authority is established as an independent authority with legal personality. The EBA shall contribute to ensuring consistent and effective prudential regulation of credit institutions and investment firms and consumer protection in the Union. The EBA shall promote supervisory convergence.
+
+[DOC] EU Regulation 1093/2010 | Article 8 - Tasks of the Authority
+The EBA shall develop draft regulatory technical standards and implementing technical standards to ensure consistent prudential regulation. The EBA shall issue guidelines and recommendations to ensure consistent application of Union law. The EBA shall cooperate with national competent authorities to ensure proper coordination of resolution processes.
+
+[DOC] EU Directive 2015/2366 | Article 67 - Refund of Unauthorised Electronic Payment Transactions
+A payment service user shall have the right to a refund of an unauthorised electronic payment transaction from the payment service provider. However, the user shall not be entitled to a refund if they acted with gross negligence in failing to keep safe the personalised security credentials or failing to notify of loss or theft.
+
+[DOC] EU Directive 2015/2366 | Article 98 - Market Conduct
+Payment service providers shall treat customers fairly and shall not engage in unfair commercial practices or misleading advertising. Payment service providers shall not place obligations on payment service users which exceed those agreed in the relevant contract or which are stricter than those imposed by EU law.
+
+[DOC] EU Directive 2009/65/EC | Article 1 - Subject Matter
+This Directive establishes rules for the authorization and ongoing regulation of Undertakings for Collective Investment in Transferable Securities (UCITS) in order to facilitate the management of collective investment portfolios. The Directive aims to create a single rulebook for UCITS to enable free movement of capital within the EU.
+
+[DOC] EU Directive 2009/65/EC | Article 12 - Requirement to Hold Authorisation
+An undertaking shall not be managed or marketed as a UCITS unless it holds authorisation from the competent authority as a UCITS. Authorisation shall be granted only if the undertaking meets all the requirements of this Directive. Competent authorities shall refuse authorisation if the applicant fails to satisfy the required conditions.
+
+[DOC] EU Directive 2014/91/EU | Article 1 - Subject Matter
+This Directive amends Directive 2009/65/EC to establish rules on the authorization and regulation of European long-term investment funds and funds of funds. It facilitates the cross-border distribution and management of collective investments throughout the Union by harmonizing requirements for fund managers and depositaries.
+
+[DOC] EU Regulation 236/2012 | Article 1 - Subject Matter
+This Regulation establishes a common regulatory framework for short selling and credit default swaps in the Union in order to ensure the smooth operation of financial markets and to avoid risks to financial stability. The Regulation requires notification and disclosure of net short positions and imposes restrictions on naked short selling. 
+
+[DOC] EU Regulation 236/2012 | Article 5 - Emergency powers of National Competent Authorities
+Member States' competent authorities shall have powers to impose restrictions on short selling if there is a significant fall in the price of a financial instrument or in the prices of financial instruments in a given market. Such restrictions shall be temporary and proportionate and shall not duplicate restrictions imposed by ESMA.
+
+[DOC] Basel III Framework - Liquidity Coverage Ratio
+The Liquidity Coverage Ratio (LCR) requires banks to hold an adequate amount of high-quality liquid assets (HQLA) that can be easily and immediately converted into cash to meet their liquidity needs over a 30-calendar-day stress scenario. Banks must maintain a minimum LCR of 100 percent. HQLA comprises level 1 assets and level 2 assets which face certain haircuts.

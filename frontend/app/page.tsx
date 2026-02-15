@@ -18,7 +18,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 type Message = {
   id: string;
@@ -100,7 +100,7 @@ export default function Home() {
       const hashedPassword = await hashPassword(password);
 
       const response = await axios.post(
-        `http://localhost:8000/auth/login`,
+        `/api/auth/login`,
         {
           username,
           password_hash: hashedPassword,
@@ -325,13 +325,6 @@ export default function Home() {
               </button>
             </form>
 
-            {/* Footer */}
-            <p className="text-center text-xs text-foreground/50 mt-6">
-              Demo Credentials:<br/>
-              Username: <span className="font-mono">Muthu</span><br/>
-              Password: <span className="font-mono">Amsterdam@2025</span>
-            </p>
-
             {/* Theme Toggle */}
             <div className="flex justify-center mt-6 pt-6 border-t border-border">
               <button
@@ -390,6 +383,9 @@ export default function Home() {
               className="rounded-md border border-border bg-background px-2 py-2 text-sm sm:px-3 dark:bg-secondary"
             >
               <option value="en">🇬🇧 English</option>
+              <option value="de">🇩🇪 Deutsch</option>
+              <option value="es">🇪🇸 Español</option>
+              <option value="pt">🇵🇹 Português</option>
               <option value="fr">🇫🇷 Français</option>
               <option value="nl">🇳🇱 Nederlands</option>
             </select>
