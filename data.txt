@@ -171,3 +171,36 @@ Member States' competent authorities shall have powers to impose restrictions on
 
 [DOC] Basel III Framework - Liquidity Coverage Ratio
 The Liquidity Coverage Ratio (LCR) requires banks to hold an adequate amount of high-quality liquid assets (HQLA) that can be easily and immediately converted into cash to meet their liquidity needs over a 30-calendar-day stress scenario. Banks must maintain a minimum LCR of 100 percent. HQLA comprises level 1 assets and level 2 assets which face certain haircuts.
+
+[DOC] EU Regulation 2023/1114 | Article 1 - Subject Matter (MiCA)
+This Regulation establishes a harmonized regulatory framework for marketing and custody of crypto-assets in the Union. It aims to ensure consumer protection and financial stability while promoting innovation in the crypto-asset market. Member States shall establish competencies to authorize and supervise crypto-asset service providers including exchanges, wallets, and lending platforms.
+
+[DOC] EU Regulation 2023/1114 | Article 15 - Authorization of Crypto-Asset Service Providers
+Crypto-asset exchange service providers that market crypto-assets in the Union shall be authorized by the competent authorities of the Member State in which they are established. Authorization can only be granted to legal persons established in the Union. Crypto-asset exchange service providers shall comply with requirements regarding governance, risk management, and operational resilience.
+
+[DOC] EU Regulation 2023/1114 | Article 53 - Customer Due Diligence for Crypto-Assets
+Crypto-asset service providers shall apply customer due diligence measures to all customers and beneficial owners. Due diligence shall include identification of the customer, verification of the customer's identity, and understanding the purpose and intended nature of the business relationship. Enhanced due diligence applies for high-risk customers and jurisdictions.
+
+[DOC] EU Directive 2026/2408 | Article 1 - Subject Matter (DORA)
+This Directive establishes a framework for digital operational resilience of financial entities. It aims to ensure high levels of cybersecurity and operational resilience in light of increased digital threats. Financial entities shall implement technical, organizational and governance measures to ensure continuity and protection of critical functions in case of digital incidents.
+
+[DOC] EU Directive 2026/2408 | Article 20 - Incident Reporting
+Financial entities shall report major operational or security incidents to competent authorities without undue delay and no later than 72 hours. The report shall include details of the incident, impact assessment, and mitigation measures undertaken. Member States shall establish centralized incident reporting frameworks and share information with competent authorities and sectoral bodies.
+
+[DOC] EU Regulation 2024/517 | Article 1 - Subject Matter
+This Regulation amends Regulation (EU) No 648/2012 on over-the-counter derivatives, central counterparties and trade repositories to enhance oversight of non-EU counterparties and improve transparency of derivative transactions. Enhanced reporting requirements apply to all derivatives transactions regardless of counterparty location or trade execution venue.
+
+[DOC] EU Directive 2024/1139 | Article 1 - Subject Matter
+This Directive establishes a framework for the transfer of venture capital and private equity funds in the internal market. It creates harmonized due diligence standards for fund transfers and requires Member States to designate competent authorities responsible for the authorization and supervision of fund transfers to ensure investor protection and market integrity.
+
+[DOC] EU Regulation 2024/886 | Article 1 - Subject Matter (Net Zero Alignment)
+This Regulation establishes requirements for financial market participants regarding the alignment of financial products with net-zero objectives. Market participants shall make available information on how their financial products contribute to or do not contribute to the transition to a net-zero economy. Greenwashing prevention measures include verification of sustainability claims and alignment with EU taxonomy standards.
+
+[DOC] EU Regulation 2024/886 | Article 14 - Information Disclosure for Net-Zero Products
+Financial market participants offering net-zero aligned products shall provide prospective clients with clear information about the product's alignment with net-zero objectives, transition timeline, and impact measurement. Information shall include assumption and limitations of net-zero alignment strategies. Misleading or unsupported net-zero claims are prohibited and may result in administrative penalties.
+
+[DOC] EU Directive (EU) 2025/456 | Article 1 - Subject Matter
+This Directive establishes enhanced cybersecurity requirements for critical infrastructure in the financial sector. Financial institutions classified as critical operators shall maintain advanced detection and prevention systems for cyber-attacks and establish incident response plans approved by competent authorities. Cross-border cooperation mechanisms for threat intelligence sharing are mandatory.
+
+[DOC] EU Regulation 2025/712 | Article 1 - Subject Matter
+This Regulation establishes a framework for sustainable finance taxonomy updates and expands the definition of environmentally sustainable economic activities to include transitions in emerging sectors. Updated taxonomy standards apply to renewable energy, energy efficiency retrofitting, and circular economy initiatives. Member States shall review classification and reporting requirements annually.
