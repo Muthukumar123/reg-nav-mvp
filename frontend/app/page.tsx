@@ -16,6 +16,7 @@ import {
   Lightbulb,
   LogOut,
   ArrowLeft,
+  X,
 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
@@ -57,6 +58,7 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [authenticatedUser, setAuthenticatedUser] = useState('');
+  const [showAbout, setShowAbout] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -403,6 +405,15 @@ export default function Home() {
               )}
             </button>
 
+            {/* About Button */}
+            <button
+              onClick={() => setShowAbout(true)}
+              className="rounded-lg border border-border p-2 transition-colors hover:bg-secondary"
+              title={t('about')}
+            >
+              <AlertCircle size={20} />
+            </button>
+
             {/* Logout Button */}
             <button
               onClick={handleLogout}
@@ -565,6 +576,78 @@ export default function Home() {
           </p>
         </div>
       </footer>
+
+      {/* About Modal */}
+      {showAbout && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background border border-border rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 flex items-center justify-between p-6 border-b border-border bg-background">
+              <h2 className="text-2xl font-bold">{t('aboutModal.title')}</h2>
+              <button
+                onClick={() => setShowAbout(false)}
+                className="rounded-lg border border-border p-2 transition-colors hover:bg-secondary"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Why Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">{t('aboutModal.why')}</h3>
+                <p className="text-foreground/80 whitespace-pre-wrap">{t('aboutModal.whyText')}</p>
+              </div>
+
+              {/* How It Works Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">{t('aboutModal.how')}</h3>
+                
+                <div className="space-y-4">
+                  {/* Functional */}
+                  <div>
+                    <h4 className="font-medium mb-2">{t('aboutModal.functional')}</h4>
+                    <p className="text-sm text-foreground/80 whitespace-pre-wrap bg-secondary p-3 rounded-lg">{t('aboutModal.functionalText')}</p>
+                  </div>
+
+                  {/* Technical */}
+                  <div>
+                    <h4 className="font-medium mb-2">{t('aboutModal.technical')}</h4>
+                    <p className="text-sm text-foreground/80 whitespace-pre-wrap bg-secondary p-3 rounded-lg">{t('aboutModal.technicalText')}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* For Whom Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">{t('aboutModal.forWhom')}</h3>
+                <p className="text-sm text-foreground/80 whitespace-pre-wrap bg-secondary p-3 rounded-lg">{t('aboutModal.forWhomText')}</p>
+              </div>
+
+              {/* Features Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">{t('aboutModal.features')}</h3>
+                <p className="text-sm text-foreground/80 whitespace-pre-wrap bg-secondary p-3 rounded-lg">{t('aboutModal.featuresText')}</p>
+              </div>
+
+              {/* Coverage Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">{t('aboutModal.coverage')}</h3>
+                <p className="text-sm text-foreground/80 whitespace-pre-wrap bg-secondary p-3 rounded-lg">{t('aboutModal.coverageText')}</p>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setShowAbout(false)}
+                className="w-full rounded-lg bg-primary text-primary-foreground py-2 font-medium transition-opacity hover:opacity-90 mt-4"
+              >
+                {t('close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
