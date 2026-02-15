@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import axios from 'axios';
 import {
@@ -10,7 +10,6 @@ import {
   Loader2,
   Copy,
   Share2,
-  Globe,
   ChevronRight,
   AlertCircle,
   Lightbulb,
@@ -63,6 +62,7 @@ export default function Home() {
   const [showDashboard, setShowDashboard] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -106,7 +106,7 @@ export default function Home() {
       const hashedPassword = await hashPassword(password);
 
       const response = await axios.post(
-        `/api/auth/login`,
+        `${API_URL}/auth/login`,
         {
           username,
           password_hash: hashedPassword,
@@ -144,7 +144,7 @@ export default function Home() {
     try {
       setAnalyticsLoading(true);
       const token = sessionStorage.getItem('token');
-      const response = await axios.get(`/api/analytics`, {
+      const response = await axios.get(`${API_URL}/analytics`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -212,7 +212,7 @@ export default function Home() {
       
       const token = sessionStorage.getItem('token');
       const response = await axios.post(
-        `/api/ask`,
+        `${API_URL}/ask`,
         {
           question: input,
           top_k: 3,
@@ -282,8 +282,33 @@ export default function Home() {
     inputRef.current?.focus();
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = async (text: string, messageId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Show success feedback
+      setCopiedMessageId(messageId);
+      // Reset feedback after 2 seconds
+      setTimeout(() => setCopiedMessageId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      // Fallback method for older browsers
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        // Show success feedback
+        setCopiedMessageId(messageId);
+        setTimeout(() => setCopiedMessageId(null), 2000);
+      } catch (fallbackError) {
+        console.error('Fallback copy method also failed:', fallbackError);
+        alert('Failed to copy to clipboard. Please try again.');
+      }
+    }
   };
 
   if (!mounted) {
@@ -672,19 +697,37 @@ export default function Home() {
                   {message.type === 'assistant' && (
                     <div className="mt-3 flex gap-2 flex-wrap">
                       <button
-                        onClick={() => copyToClipboard(message.content)}
-                        className="flex items-center gap-1 rounded px-2 py-1 text-xs hover:bg-background/30 transition-colors"
+                        onClick={() => copyToClipboard(message.content, message.id)}
+                        className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors ${
+                          copiedMessageId === message.id
+                            ? 'bg-green-600/30 text-green-600 border border-green-600'
+                            : 'hover:bg-background/30'
+                        }`}
+                        title="Copy message to clipboard"
                       >
                         <Copy size={14} />
-                        <span>{t('copy')}</span>
+                        <span>{copiedMessageId === message.id ? 'Copied!' : t('copy')}</span>
                       </button>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           const text = `${message.content}\n\nSources: ${message.citations?.map((c) => c.doc).join(', ')}`;
-                          navigator.share &&
-                            navigator.share({ title: t('title'), text });
+                          if (navigator.share) {
+                            try {
+                              await navigator.share({ title: t('title'), text });
+                            } catch (error: any) {
+                              if (error.name !== 'AbortError') {
+                                console.error('Share failed:', error);
+                                // Fallback to copy if share fails
+                                copyToClipboard(text, message.id);
+                              }
+                            }
+                          } else {
+                            // Fallback to copy if native share is not available
+                            copyToClipboard(text, message.id);
+                          }
                         }}
                         className="flex items-center gap-1 rounded px-2 py-1 text-xs hover:bg-background/30 transition-colors"
+                        title="Share message or copy if sharing is not available"
                       >
                         <Share2 size={14} />
                         <span>{t('share')}</span>
