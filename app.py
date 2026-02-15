@@ -114,7 +114,7 @@ KEY FEATURES
 """
 
 import logging
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -551,7 +551,7 @@ def login(req: LoginRequest):
     )
 
 @app.post("/ask", response_model=AskResponse)
-def ask(req: AskRequest, authorization: Optional[str] = None):
+def ask(req: AskRequest, authorization: Optional[str] = Header(None)):
     """Main endpoint: Answer regulatory questions using RAG (Retrieval-Augmented Generation).
     
     TWO-STAGE ARCHITECTURE
