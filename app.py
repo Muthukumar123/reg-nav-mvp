@@ -125,6 +125,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict
 
 from llm import call_llm
+from infrastructure.analytics import analytics
 
 # Configure structured logging with timestamp, logger name, and level
 logging.basicConfig(
@@ -508,6 +509,28 @@ def health():
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(status_code=500, detail="Health check failed")
 
+@app.get("/analytics")
+def get_analytics(authorization: Optional[str] = Header(None)):
+    """Get analytics dashboard data."""
+    try:
+        # Verify token for security
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing or invalid authorization token"
+            )
+        
+        token = authorization[len("Bearer "):]
+        verify_token(token)
+        
+        logger.info("Analytics dashboard requested")
+        return analytics.get_stats()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Analytics retrieval failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve analytics")
+
 @app.post("/auth/login", response_model=LoginResponse)
 def login(req: LoginRequest):
     """Login endpoint with SHA256 password verification.
@@ -543,6 +566,9 @@ def login(req: LoginRequest):
     ACTIVE_TOKENS[token] = (req.username, expiry)
     
     logger.info(f"Login successful for user: {req.username}")
+    
+    # Track login in analytics
+    analytics.track_login(req.username)
     
     return LoginResponse(
         success=True,
@@ -662,6 +688,9 @@ def ask(req: AskRequest, authorization: Optional[str] = Header(None)):
         logger.info(f"Processing question: {req.question[:100]}...")
         logger.debug(f"Request parameters - top_k: {req.top_k}")
         
+        # Track query start time for analytics
+        query_start_time = datetime.now()
+        
         # ====== VALIDATION PHASE ======
         # Ensure system is fully initialized before processing
         if not CHUNKS:
@@ -755,12 +784,29 @@ def ask(req: AskRequest, authorization: Optional[str] = Header(None)):
             "scores": scores            # Similarity scores (relevance confidence)
         }
         
-        logger.info(f"Returning response with {len(citations)} citations")
+        # Track query in analytics
+        query_duration = (datetime.now() - query_start_time).total_seconds()
+        regulations_used = [f"{c['doc']} | {c['section']}" for c in citations]
+        analytics.track_query(
+            question=req.question,
+            response_time=query_duration,
+            success=True,
+            regulations_used=regulations_used
+        )
+        
+        logger.info(f"Returning response with {len(citations)} citations (duration: {query_duration:.2f}s)")
         return response
     
     except HTTPException:
         # Re-raise HTTP exceptions (already have proper status codes)
         raise
     except Exception as e:
+        # Track failed query in analytics
+        query_duration = (datetime.now() - query_start_time).total_seconds()
+        analytics.track_query(
+            question=req.question,
+            response_time=query_duration,
+            success=False
+        )
         logger.error(f"Unexpected error in /ask endpoint: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

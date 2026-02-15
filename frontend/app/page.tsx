@@ -17,6 +17,7 @@ import {
   LogOut,
   ArrowLeft,
   X,
+  BarChart3,
 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
@@ -59,6 +60,9 @@ export default function Home() {
   const [loginError, setLoginError] = useState('');
   const [authenticatedUser, setAuthenticatedUser] = useState('');
   const [showAbout, setShowAbout] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -130,9 +134,33 @@ export default function Home() {
     setAuthenticatedUser('');
     setMessages([]);
     setInput('');
+    setShowDashboard(false);
     sessionStorage.removeItem('authenticated');
     sessionStorage.removeItem('username');
     sessionStorage.removeItem('token');
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      setAnalyticsLoading(true);
+      const token = sessionStorage.getItem('token');
+      const response = await axios.get(`/api/analytics`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setAnalyticsData(response.data);
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const handleDashboard = () => {
+    setShowDashboard(true);
+    setMessages([]); // Clear chat messages when viewing dashboard
+    fetchAnalytics();
   };
 
   const handleBack = () => {
@@ -414,6 +442,15 @@ export default function Home() {
               <AlertCircle size={20} />
             </button>
 
+            {/* Dashboard Button */}
+            <button
+              onClick={handleDashboard}
+              className="rounded-lg border border-border p-2 transition-colors hover:bg-secondary"
+              title="Dashboard"
+            >
+              <BarChart3 size={20} />
+            </button>
+
             {/* Logout Button */}
             <button
               onClick={handleLogout}
@@ -428,7 +465,137 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="mx-auto flex max-w-4xl flex-col px-4 py-8 sm:py-12">
-        {messages.length === 0 ? (
+        {/* Dashboard View */}
+        {showDashboard ? (
+          <div className="space-y-8">
+            {/* Back Button */}
+            <button
+              onClick={() => setShowDashboard(false)}
+              className="flex items-center gap-2 text-primary hover:underline"
+            >
+              <ArrowLeft size={20} />
+              Back to Chat
+            </button>
+
+            {/* Dashboard Title */}
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Analytics Dashboard</h1>
+              <p className="text-foreground/60">System metrics and EU regulatory intelligence</p>
+            </div>
+
+            {/* Loading State */}
+            {analyticsLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 size={32} className="animate-spin" />
+              </div>
+            ) : analyticsData ? (
+              <div className="space-y-6">
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Total Queries */}
+                  <div className="rounded-lg border border-border bg-secondary/50 p-6">
+                    <div className="text-sm text-foreground/60 mb-2">Total Queries</div>
+                    <div className="text-3xl font-bold">{analyticsData.total_queries || 0}</div>
+                    <div className="text-xs text-foreground/50 mt-2">
+                      Success Rate: {analyticsData.success_rate}%
+                    </div>
+                  </div>
+
+                  {/* Successful Queries */}
+                  <div className="rounded-lg border border-border bg-secondary/50 p-6">
+                    <div className="text-sm text-foreground/60 mb-2">✓ Successful</div>
+                    <div className="text-3xl font-bold text-green-600">{analyticsData.successful_queries || 0}</div>
+                    <div className="text-xs text-foreground/50 mt-2">
+                      Failed: {analyticsData.failed_queries || 0}
+                    </div>
+                  </div>
+
+                  {/* Total Logins */}
+                  <div className="rounded-lg border border-border bg-secondary/50 p-6">
+                    <div className="text-sm text-foreground/60 mb-2">Total Logins</div>
+                    <div className="text-3xl font-bold">{analyticsData.total_logins || 0}</div>
+                    <div className="text-xs text-foreground/50 mt-2">
+                      Uptime: {analyticsData.uptime_formatted}
+                    </div>
+                  </div>
+
+                  {/* Avg Response Time */}
+                  <div className="rounded-lg border border-border bg-secondary/50 p-6">
+                    <div className="text-sm text-foreground/60 mb-2">Avg Response</div>
+                    <div className="text-3xl font-bold">{analyticsData.avg_response_time_ms?.toFixed(0)}ms</div>
+                    <div className="text-xs text-foreground/50 mt-2">
+                      Last Hour: {analyticsData.query_distribution?.last_hour}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top Regulations */}
+                {analyticsData.top_regulations && analyticsData.top_regulations.length > 0 && (
+                  <div className="rounded-lg border border-border bg-secondary/50 p-6">
+                    <h3 className="text-lg font-bold mb-4">Most Queried Regulations</h3>
+                    <div className="space-y-2">
+                      {analyticsData.top_regulations.slice(0, 5).map((reg: any, idx: number) => (
+                        <div key={idx} className="flex justify-between items-center">
+                          <span className="text-foreground/80">{reg.regulation}</span>
+                          <span className="font-bold">{reg.queries}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* EU Regulatory Coverage */}
+                {analyticsData.eu_regulatory_coverage && (
+                  <div className="rounded-lg border border-border bg-secondary/50 p-6">
+                    <h3 className="text-lg font-bold mb-4">EU Regulatory Directives Coverage</h3>
+                    <p className="text-sm text-foreground/60 mb-4">Coverage Years: {analyticsData.coverage_years}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {Object.entries(analyticsData.eu_regulatory_coverage).map(([key, value]: [string, any]) => (
+                        <div key={key} className="flex justify-between items-center p-3 bg-primary/5 rounded">
+                          <span className="text-sm">{key}</span>
+                          <span className="font-bold text-primary">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Latest Regulations */}
+                {analyticsData.latest_regulations && (
+                  <div className="rounded-lg border border-border bg-secondary/50 p-6">
+                    <h3 className="text-lg font-bold mb-4">Latest Regulations (2023-2026)</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {analyticsData.latest_regulations.map((reg: string, idx: number) => (
+                        <div key={idx} className="p-3 bg-primary/10 rounded text-sm text-center font-medium">
+                          {reg}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Languages Used */}
+                {analyticsData.languages_used && Object.keys(analyticsData.languages_used).length > 0 && (
+                  <div className="rounded-lg border border-border bg-secondary/50 p-6">
+                    <h3 className="text-lg font-bold mb-4">Language Distribution</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {Object.entries(analyticsData.languages_used).map(([lang, count]: [string, any]) => (
+                        <div key={lang} className="p-3 bg-secondary rounded">
+                          <div className="text-sm text-foreground/60 mb-1 capitalize">{lang}</div>
+                          <div className="text-2xl font-bold">{count}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-foreground/60">Failed to load analytics data</p>
+              </div>
+            )}
+          </div>
+        ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center space-y-8 py-12">
             {/* Welcome Section */}
             <div className="text-center animate-fade-in">
