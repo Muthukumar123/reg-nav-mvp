@@ -14,9 +14,11 @@ import {
   ChevronRight,
   AlertCircle,
   Lightbulb,
+  LogOut,
+  ArrowLeft,
 } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 type Message = {
   id: string;
@@ -31,6 +33,17 @@ type Translations = {
   [key: string]: string | Record<string, string>;
 };
 
+// Simple SHA256 hash function using Web Crypto API
+const hashPassword = async (password: string, modKey: string = 'Handbook'): Promise<string> => {
+  const combined = password + modKey;
+  const encoder = new TextEncoder();
+  const data = encoder.encode(combined);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+};
+
 export default function Home() {
   const { theme, setTheme } = useTheme();
   const [language, setLanguage] = useState('en');
@@ -39,6 +52,11 @@ export default function Home() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [authenticatedUser, setAuthenticatedUser] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -59,7 +77,66 @@ export default function Home() {
   // Mount check
   useEffect(() => {
     setMounted(true);
+    // Check if user is already authenticated in session
+    const stored = sessionStorage.getItem('authenticated');
+    const storedUser = sessionStorage.getItem('username');
+    if (stored) {
+      setIsAuthenticated(true);
+      setAuthenticatedUser(storedUser || '');
+    }
   }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+
+    if (!username || !password) {
+      setLoginError('Please enter both username and password');
+      return;
+    }
+
+    try {
+      // Hash password with SHA256 and mod key (async)
+      const hashedPassword = await hashPassword(password);
+
+      const response = await axios.post(
+        `http://localhost:8000/auth/login`,
+        {
+          username,
+          password_hash: hashedPassword,
+        }
+      );
+
+      if (response.data.success) {
+        setIsAuthenticated(true);
+        setAuthenticatedUser(username);
+        setUsername('');
+        setPassword('');
+        // Store in session
+        sessionStorage.setItem('authenticated', 'true');
+        sessionStorage.setItem('username', username);
+        sessionStorage.setItem('token', response.data.token || '');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setLoginError(error.response?.data?.detail || 'Authentication failed. Please check your credentials.');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setAuthenticatedUser('');
+    setMessages([]);
+    setInput('');
+    sessionStorage.removeItem('authenticated');
+    sessionStorage.removeItem('username');
+    sessionStorage.removeItem('token');
+  };
+
+  const handleBack = () => {
+    setMessages([]);
+    setInput('');
+  };
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -98,14 +175,29 @@ export default function Home() {
     setLoading(true);
 
     try {
+      console.log('[API] Starting request...');
+      console.log('[API] API_URL:', API_URL);
+      console.log('[API] Full URL:', `/api/ask`);
+      console.log('[API] Question:', input);
+      
+      const token = sessionStorage.getItem('token');
       const response = await axios.post(
-        `${API_URL}/ask`,
+        `/api/ask`,
         {
           question: input,
           top_k: 3,
         },
-        { timeout: 60000 }
+        { 
+          timeout: 60000,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+          }
+        }
       );
+
+      console.log('[API] Response received:', response.status);
+      console.log('[API] Response data:', response.data);
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -118,10 +210,34 @@ export default function Home() {
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error: any) {
+      console.error('[API ERROR]', error);
+      console.error('[API ERROR] message:', error.message);
+      console.error('[API ERROR] code:', error.code);
+      console.error('[API ERROR] response status:', error.response?.status);
+      console.error('[API ERROR] response data:', error.response?.data);
+      console.error('[API ERROR] request URL:', error.config?.url);
+      
+      let errorDetails = error.message || 'Unknown error';
+      if (error.response?.status === 422) {
+        errorDetails = 'Question validation failed - please use at least 5 characters';
+        if (error.response?.data?.detail) {
+          errorDetails = error.response.data.detail[0]?.msg || errorDetails;
+        }
+      } else if (error.response) {
+        errorDetails = `Server error (${error.response.status}): ${error.response.statusText}`;
+        if (error.response.data?.detail) {
+          errorDetails = error.response.data.detail;
+        }
+      } else if (error.request) {
+        errorDetails = 'No response from server - check if backend is running';
+      } else if (error.code === 'ECONNABORTED') {
+        errorDetails = 'Request timeout - backend took too long to respond';
+      }
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: `${t('error')}: ${error.message}. ${t('tryAgain')}`,
+        content: `${t('error')}: ${errorDetails}. ${t('tryAgain')}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -144,18 +260,126 @@ export default function Home() {
     return null;
   }
 
+  // Login Screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-secondary flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="rounded-lg border border-border bg-background p-8 shadow-lg">
+            {/* Logo */}
+            <div className="flex justify-center mb-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Lightbulb size={24} />
+              </div>
+            </div>
+
+            {/* Title */}
+            <h1 className="text-2xl font-bold text-center mb-2">
+              Regulation Navigator
+            </h1>
+            <p className="text-center text-foreground/60 mb-6">
+              Please login to continue
+            </p>
+
+            {/* Login Form */}
+            <form onSubmit={handleLogin} className="space-y-4">
+              {loginError && (
+                <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-3 flex gap-2">
+                  <AlertCircle size={18} className="text-destructive flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-destructive">{loginError}</p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter username"
+                  className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:bg-secondary"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter password"
+                  className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:bg-secondary"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full rounded-lg bg-primary text-primary-foreground py-2 font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                Login
+              </button>
+            </form>
+
+            {/* Footer */}
+            <p className="text-center text-xs text-foreground/50 mt-6">
+              Demo Credentials:<br/>
+              Username: <span className="font-mono">Muthu</span><br/>
+              Password: <span className="font-mono">Amsterdam@2025</span>
+            </p>
+
+            {/* Theme Toggle */}
+            <div className="flex justify-center mt-6 pt-6 border-t border-border">
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="rounded-lg border border-border p-2 transition-colors hover:bg-secondary"
+              >
+                {theme === 'dark' ? (
+                  <Sun size={18} />
+                ) : (
+                  <Moon size={18} />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:py-6">
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Back Button - Show only when messages exist */}
+            {messages.length > 0 && (
+              <button
+                onClick={handleBack}
+                className="rounded-lg border border-border p-2 transition-colors hover:bg-secondary"
+                title="Back to chat"
+              >
+                <ArrowLeft size={20} />
+              </button>
+            )}
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground sm:h-10 sm:w-10">
               <Lightbulb size={20} className="sm:w-6 sm:h-6" />
             </div>
-            <h1 className="text-lg font-bold sm:text-2xl">
-              {t('title')}
-            </h1>
+            <div>
+              <h1 className="text-lg font-bold sm:text-2xl">
+                {t('title')}
+              </h1>
+              {authenticatedUser && (
+                <p className="text-xs sm:text-sm text-foreground/60">
+                  Welcome, {authenticatedUser}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
@@ -181,6 +405,15 @@ export default function Home() {
               ) : (
                 <Moon size={20} />
               )}
+            </button>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="rounded-lg border border-border p-2 transition-colors hover:bg-secondary text-destructive hover:border-destructive"
+              title="Logout"
+            >
+              <LogOut size={20} />
             </button>
           </div>
         </div>

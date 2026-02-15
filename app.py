@@ -114,10 +114,15 @@ KEY FEATURES
 """
 
 import logging
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import hashlib
+import secrets
+from datetime import datetime, timedelta
+from typing import Optional, Dict
 
 from llm import call_llm
 
@@ -130,6 +135,82 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI application with title for OpenAPI documentation
 app = FastAPI(title="Regulation Navigator MVP")
+
+# Add request logging middleware
+@app.middleware("http")
+async def log_requests(request, call_next):
+    """Log all incoming requests for debugging."""
+    request_body = b""
+    try:
+        request_body = await request.body()
+        logger.debug(f"{request.method} {request.url.path} - Body: {request_body[:200]}")
+    except:
+        pass
+    
+    # Call the next middleware
+    response = await call_next(request)
+    logger.debug(f"Response status: {response.status_code}")
+    return response
+
+# Add CORS middleware to allow frontend cross-origin requests
+# Allow all origins in development mode for easier debugging
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "*",  # Allow all origins in dev mode - remove in production
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ============================================================================
+# AUTHENTICATION CONFIGURATION
+# ============================================================================
+
+# Hardcoded credentials
+VALID_USERNAME = "Muthu"
+VALID_PASSWORD_HASH = None  # Will be set below
+
+# SHA256 hash with mod key
+MOD_KEY = "Handbook"
+
+def hash_password(password: str, mod_key: str = MOD_KEY) -> str:
+    """Hash password using SHA256 with mod key."""
+    combined = password + mod_key
+    return hashlib.sha256(combined.encode()).hexdigest()
+
+# Calculate and store the valid password hash
+VALID_PASSWORD_HASH = hash_password("Amsterdam@2025")
+
+# In-memory token storage (token -> username, expiry)
+ACTIVE_TOKENS: Dict[str, tuple[str, datetime]] = {}
+
+def generate_token() -> str:
+    """Generate a secure random token."""
+    return secrets.token_urlsafe(32)
+
+def verify_token(token: str) -> str:
+    """Verify token and return username if valid."""
+    if token not in ACTIVE_TOKENS:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
+    
+    username, expiry = ACTIVE_TOKENS[token]
+    if datetime.now() > expiry:
+        del ACTIVE_TOKENS[token]
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired"
+        )
+    
+    return username
 
 # ============================================================================
 # DATA LOADING & INITIALIZATION
@@ -291,6 +372,17 @@ except Exception as e:
 # REQUEST/RESPONSE MODELS (API CONTRACTS)
 # ============================================================================
 
+class LoginRequest(BaseModel):
+    """Login request with username and password hash."""
+    username: str = Field(..., description="Username")
+    password_hash: str = Field(..., description="SHA256 hashed password (password + 'Handbook')")
+
+class LoginResponse(BaseModel):
+    """Login response with token."""
+    success: bool
+    token: Optional[str] = None
+    message: str
+
 class AskRequest(BaseModel):
     """Request model for the POST /ask endpoint.
     
@@ -382,12 +474,24 @@ def root():
         "version": "1.0.0",
         "endpoints": {
             "/": "API information (this page)",
+            "/auth/login": "POST - Login with username and password hash",
+            "/ask": "POST - Ask regulatory questions (requires authentication)",
             "/health": "Health check endpoint",
-            "/ask": "POST - Ask regulatory questions",
+            "/test-cors": "CORS test endpoint",
             "/docs": "Interactive API documentation (Swagger UI)",
             "/redoc": "Alternative API documentation (ReDoc)"
         },
-        "status": "running"
+        "status": "running",
+        "authentication": "Required - Login first at /auth/login"
+    }
+
+@app.get("/test-cors")
+def test_cors():
+    """Simple CORS test endpoint to verify connectivity."""
+    return {
+        "message": "CORS working!",
+        "timestamp": str(__import__('datetime').datetime.now()),
+        "cors_test": True
     }
 
 @app.get("/health")
@@ -404,9 +508,50 @@ def health():
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(status_code=500, detail="Health check failed")
 
-@app.post("/ask")
+@app.post("/auth/login", response_model=LoginResponse)
+def login(req: LoginRequest):
+    """Login endpoint with SHA256 password verification.
+    
+    Expects password hash: SHA256(password + 'Handbook')
+    
+    Demo credentials:
+    - Username: Muthu
+    - Password: Amsterdam@2025 (hash it with mod key 'Handbook')
+    """
+    logger.info(f"Login attempt for username: {req.username}")
+    
+    # Verify username
+    if req.username != VALID_USERNAME:
+        logger.warning(f"Login failed: Invalid username - {req.username}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password"
+        )
+    
+    # Verify password hash
+    if req.password_hash != VALID_PASSWORD_HASH:
+        logger.warning(f"Login failed: Invalid password for user - {req.username}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password"
+        )
+    
+    # Generate token
+    token = generate_token()
+    # Token expires in 2 hours
+    expiry = datetime.now() + timedelta(hours=2)
+    ACTIVE_TOKENS[token] = (req.username, expiry)
+    
+    logger.info(f"Login successful for user: {req.username}")
+    
+    return LoginResponse(
+        success=True,
+        token=token,
+        message=f"Welcome, {req.username}!"
+    )
+
 @app.post("/ask", response_model=AskResponse)
-def ask(req: AskRequest):
+def ask(req: AskRequest, authorization: Optional[str] = None):
     """Main endpoint: Answer regulatory questions using RAG (Retrieval-Augmented Generation).
     
     TWO-STAGE ARCHITECTURE
@@ -493,6 +638,27 @@ def ask(req: AskRequest):
         HTTPException 500: Unexpected processing error
     """
     try:
+        # ====== AUTHENTICATION PHASE ======
+        # Verify Authorization token
+        if not authorization:
+            logger.warning("Request without authorization token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing authorization token"
+            )
+        
+        # Extract token from "Bearer <token>" format
+        if not authorization.startswith("Bearer "):
+            logger.warning("Invalid authorization header format")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authorization header format"
+            )
+        
+        token = authorization[len("Bearer "):]
+        username = verify_token(token)
+        logger.info(f"Request authenticated for user: {username}")
+        
         logger.info(f"Processing question: {req.question[:100]}...")
         logger.debug(f"Request parameters - top_k: {req.top_k}")
         
