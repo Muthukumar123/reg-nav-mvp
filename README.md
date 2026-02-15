@@ -206,10 +206,45 @@ AZURE_OPENAI_DEPLOYMENT=your-deployment-name
 ```
 
 **LLM Parameters (in `llm.py`):**
-- Model: `gpt-4-turbo-preview`
-- Temperature: `0.2` (factual, low hallucination)
-- Max Tokens: `1024`
+- Model Deployment: `gpt-5-mini` (configured in Azure)
+- Max Completion Tokens: `1024` (Azure OpenAI API v2)
 - Timeout: `20 seconds`
+
+**⚠️ API v2 Compatibility Notes:**
+- Uses `openai==2.21.0` (OpenAI Python SDK v2)
+- Parameters: `max_completion_tokens` (not `max_tokens`)
+- Temperature parameter removed (model uses default for stability)
+- Chat completion format: `messages` array with roles
+
+### Recent API Compatibility Updates (February 2026)
+
+The system was updated to support Azure OpenAI API v2 after discovering compatibility issues with the newer OpenAI SDK. Here are the changes:
+
+**Issue:** 
+- OpenAI SDK v2.x changed parameter names and removed support for certain settings
+- Legacy code used `max_tokens` which is no longer supported
+- Temperature parameter not supported for gpt-5-mini model
+
+**Solution:**
+1. **Upgraded openai library** from v1.40.6 to v2.21.0
+   - Updated in `requirements.txt` for clarity
+   - Better Azure OpenAI integration
+
+2. **Fixed API parameters** in all LLM modules:
+   - `llm.py` - Core implementation
+   - `llm_azure.py` - Alternative Azure OpenAI module
+   - `infrastructure/llm_client.py` - Refactored module
+   
+   Changes applied:
+   - ✅ `max_tokens=1024` → `max_completion_tokens=1024`
+   - ✅ Removed `temperature=0.2` parameter
+   - ✅ Simplified message structure for gpt-5-mini compatibility
+
+3. **Verified working integration:**
+   - Client initialization successful
+   - Azure OpenAI API requests processed correctly
+   - Response parsing works with updated SDK
+   - Application fully functional
 
 ## 🎓 Bank Use Cases (Verified)
 

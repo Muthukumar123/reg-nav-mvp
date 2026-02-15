@@ -6,6 +6,22 @@ One-page cheat sheet for using the refactored compliance Q&A system.
 
 # Quick Reference - Compliance Q&A System
 
+## Dependencies & Versions
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| Python | 3.12+ | Required |
+| FastAPI | 0.115.0 | API framework |
+| OpenAI SDK | 2.21.0 | Azure OpenAI client (API v2) |
+| scikit-learn | 1.5.1 | TF-IDF vectorization |
+| Uvicorn | 0.30.6 | ASGI server |
+
+### ⚠️ Important: OpenAI SDK v2.x
+The system requires `openai==2.21.0` (v2.x) for Azure OpenAI compatibility.
+- Uses `max_completion_tokens` (not `max_tokens`)
+- No `temperature` parameter (uses model default)
+- See [API_V2_MIGRATION.md](API_V2_MIGRATION.md) for details
+
 ## Architecture Layers at a Glance
 
 ```
