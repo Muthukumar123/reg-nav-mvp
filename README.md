@@ -1,10 +1,41 @@
-# Regulation Navigator MVP
+# Regulation Navigator — Production RAG System
 
-A FastAPI-based Retrieval-Augmented Generation (RAG) application for answering regulatory compliance questions using Azure OpenAI. The system retrieves relevant regulatory text chunks and provides precise, citation-backed answers.
+A production-grade Retrieval-Augmented Generation (RAG) system for answering regulatory compliance questions using grounded LLM responses with citations.
 
-## 🏗️ System Architecture Overview
+This project is an independent exploration into building reliable, enterprise-style AI systems that combine classical information retrieval with modern LLM deployment patterns.
 
-### High-Level Data Flow
+Designed and implemented end-to-end using FastAPI and Azure OpenAI.
+
+---
+
+## 🧠 Why This Project Exists
+
+Most AI demos stop at notebooks or thin wrappers around LLM APIs.
+
+I built this project to explore:
+- **Real-world RAG architecture patterns** — beyond toy examples
+- **Grounded generation and hallucination control** — production reliability
+- **Production-ready API design** — clean contracts, proper error handling
+- **Applying enterprise architecture principles to AI systems** — SOLID principles, testability, maintainability
+
+The goal was to build a clean, extensible AI service — not a demo.
+
+---
+
+## 🎯 What This Project Demonstrates
+
+- Production-style RAG system design with retrieval + generation stages
+- Grounded LLM deployment patterns using constrained prompting
+- Hallucination-aware reasoning strategies and source citation extraction
+- Architecture-first AI development using SOLID principles
+- Enterprise-ready documentation and structured codebase
+- Real regulatory compliance Q&A system (GDPR, AML, PSD2, MiFID II)
+
+---
+
+## 🏗️ System Architecture
+
+### High-Level Flow
 
 ```
 User Query
@@ -577,14 +608,7 @@ pip install -r requirements.txt --upgrade
 
 This project is part of a regulatory compliance MVP demonstration.
 
-## 👤 Author
-
-**Muthukumar123**
-
-- GitHub: [@Muthukumar123](https://github.com/Muthukumar123)
-- Repository: [reg-nav-mvp](https://github.com/Muthukumar123/reg-nav-mvp)
-
-## 🙏 Acknowledgments
+## � Acknowledgments
 
 - Built with [FastAPI](https://fastapi.tiangolo.com/)
 - Powered by [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
@@ -592,4 +616,40 @@ This project is part of a regulatory compliance MVP demonstration.
 
 ---
 
-**Status**: ✅ Production Ready | **Last Updated**: February 14, 2026
+## 💡 Lessons Learned
+
+- **Retrieval quality dominates answer quality** — a perfect LLM with poor retrieval yields poor answers
+- **Deterministic prompting significantly reduces hallucinations** — constraints matter more than sophistication
+- **Clear architectural separation simplifies future upgrades** — loosely coupled components enable rapid iteration
+- **Documentation-first development improves system clarity** — architecture is a design tool, not an afterthought
+- **Citation extraction requires explicit prompt engineering** — LLMs need clear instructions to stay grounded
+
+---
+
+## 🚀 Future Improvements
+
+- **Hybrid search** — BM25 + semantic embeddings for better retrieval
+- **Retrieval evaluation framework** — automated metrics for retrieval quality
+- **LLM output evaluation** — faithfulness scoring and grounding verification
+- **Caching and latency optimization** — Redis caching for frequent queries
+- **Multi-language support** — queries and regulations in multiple languages
+- **Compliance audit tooling** — trace regulatory decisions back to source articles
+
+---
+
+## 👤 Author
+
+Built by an enterprise architect exploring applied AI systems and modern LLM infrastructure, with a focus on reliability, clarity, and real-world deployment patterns.
+
+**Interests:**
+- Production-grade AI systems
+- RAG architecture and deployment patterns
+- Enterprise software design principles applied to AI
+- Regulatory technology and compliance automation
+
+**GitHub:** [@Muthukumar123](https://github.com/Muthukumar123)  
+**Repository:** [reg-nav-mvp](https://github.com/Muthukumar123/reg-nav-mvp)
+
+---
+
+**Status**: ✅ Production Ready | **Last Updated**: February 16, 2026
