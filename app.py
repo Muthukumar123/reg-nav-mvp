@@ -479,7 +479,7 @@ class AskRequest(BaseModel):
                           description="Regulatory compliance question (5-1000 chars)")
     top_k: int = Field(default=3, ge=1, le=10,
                        description="Number of sources to retrieve (1-10)")
-    language: str = Field(default="en", regex="^[a-z]{2}$",
+    language: str = Field(default="en", pattern="^[a-z]{2}$",
                          description="Language code (en, de, es, fr, nl, pt)")
 
 class Citation(BaseModel):
