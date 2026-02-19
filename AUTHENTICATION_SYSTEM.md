@@ -18,7 +18,7 @@ The Regulation Navigator MVP now includes a complete authentication system with 
 
 ```
 Username: Muthu
-Password: Amsterdam@2025
+Password: AIApps@2026
 ```
 
 ## How It Works
@@ -127,7 +127,7 @@ def hash_password(password: str, mod_key: str = "Handbook") -> str:
 ```
 
 **Example:**
-- Password: "Amsterdam@2025"
+- Password: "AIApps@2026"
 - Mod Key: "Handbook"
 - Combined: "Amsterdam@2025Handbook"
 - SHA256 Hash: "36e566b6181490fd5d5f0a354d418531f37e4f523e9387f2fc994c707244134f"

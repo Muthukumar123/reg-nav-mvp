@@ -125,8 +125,28 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict
 
 from llm import call_llm
-from infrastructure.analytics import analytics
-from infrastructure.query_cache import query_cache
+
+# Try to import optional infrastructure modules
+try:
+    from infrastructure.analytics import analytics
+except Exception as e:
+    logger_temp = logging.getLogger(__name__)
+    logger_temp.warning(f"Could not import analytics: {e}. Analytics disabled.")
+    class DummyAnalytics:
+        def track_login(self, user): pass
+        def track_query(self, q, t, s, r=None): pass
+    analytics = DummyAnalytics()
+
+try:
+    from infrastructure.query_cache import query_cache
+except Exception as e:
+    logger_temp = logging.getLogger(__name__)
+    logger_temp.warning(f"Could not import query_cache: {e}. Cache disabled.")
+    class DummyCache:
+        def get(self, k): return None
+        def set(self, *args, **kwargs): pass
+        def clear(self): pass
+    query_cache = DummyCache()
 
 # Configure structured logging with timestamp, logger name, and level
 logging.basicConfig(
@@ -187,7 +207,7 @@ def hash_password(password: str, mod_key: str = MOD_KEY) -> str:
     return hashlib.sha256(combined.encode()).hexdigest()
 
 # Calculate and store the valid password hash
-VALID_PASSWORD_HASH = hash_password("Amsterdam@2025")
+VALID_PASSWORD_HASH = hash_password("AIApps@2026")
 
 # In-memory token storage (token -> username, expiry)
 ACTIVE_TOKENS: Dict[str, tuple[str, datetime]] = {}
@@ -218,7 +238,7 @@ def verify_token(token: str) -> str:
 # DATA LOADING & INITIALIZATION
 # ============================================================================
 
-def load_chunks(path="data.txt"):
+def load_chunks(path="data.txt", include_multilingual=True):
     """Load and parse regulatory document chunks from data file.
     
     DATA SOURCE DETAILS
@@ -227,6 +247,11 @@ def load_chunks(path="data.txt"):
     Format: [DOC] DOCUMENT_NAME | SECTION_NAME
             Content text...
             [DOC] Next document...
+    
+    Multilingual Support:
+    - Also loads data_multilingual.txt if available
+    - Chunks tagged with language codes: [DOC:EN] [DOC:DE] [DOC:ES] [DOC:FR]
+    - Enables language-aware retrieval and LLM grounding
     
     Purpose: Serve as the knowledge base for retrieval.
     
@@ -242,7 +267,9 @@ def load_chunks(path="data.txt"):
         {
             "doc": "Regulation (EU) 2016/679",
             "section": "Article 5 - Principles Relating to Processing",
-            "text": "Personal data shall be processed lawfully..."
+            "text": "Personal data shall be processed lawfully...",
+            "language": "en",
+            "source": "data.txt"
         },
         ...
     ]
@@ -252,12 +279,15 @@ def load_chunks(path="data.txt"):
     
     Args:
         path (str): Path to the data file. Default: "data.txt"
+        include_multilingual (bool): Also load multilingual chunks
         
     Returns:
         list: List of chunk dictionaries with keys:
               - 'doc' (str): Document identifier
               - 'section' (str): Section/article name
               - 'text' (str): Chunk content text
+              - 'language' (str): Language code (en, de, es, fr, nl, pt)
+              - 'source' (str): Source file name
               
     Raises:
         FileNotFoundError: If the data file doesn't exist
@@ -267,6 +297,15 @@ def load_chunks(path="data.txt"):
         logger.info(f"Loading chunks from {path}")
         chunks = []
         current = None
+        current_lang = "en"
+        current_source = path
+
+        def _parse_lang_from_header(line):
+            """Extract language code from [DOC:XX] format."""
+            if "[DOC:" in line and "]" in line:
+                lang_code = line.split("[DOC:")[1].split("]")[0].lower()
+                return lang_code
+            return "en"
 
         with open(path, "r", encoding="utf-8") as f:
             for raw in f:
@@ -274,18 +313,33 @@ def load_chunks(path="data.txt"):
                 if not line:
                     continue
 
-                if line.startswith("[DOC]"):
+                # Check for language markers [LANG:XX]
+                if line.startswith("[LANG:"):
+                    current_lang = line.split("[LANG:")[1].split("]")[0].lower()
+                    continue
+
+                if line.startswith("[DOC"):
                     # Save previous chunk if exists
                     if current:
                         chunks.append(current)
 
-                    # Parse header: [DOC] DOC_NAME | SECTION_NAME
-                    header = line[len("[DOC]"):].strip()
+                    # Extract language from [DOC:XX] if present
+                    detected_lang = _parse_lang_from_header(line)
+                    
+                    # Parse header: [DOC] DOC_NAME | SECTION_NAME or [DOC:XX] DOC_NAME | SECTION_NAME
+                    header = line.replace("[DOC]", "").replace(f"[DOC:{detected_lang}]", "").strip()
                     parts = [p.strip() for p in header.split("|")]
                     doc = parts[0] if len(parts) > 0 else "UNKNOWN_DOC"
                     section = parts[1] if len(parts) > 1 else "UNKNOWN_SECTION"
+                    
                     # Initialize new chunk with metadata and empty text
-                    current = {"doc": doc, "section": section, "text": ""}
+                    current = {
+                        "doc": doc,
+                        "section": section,
+                        "text": "",
+                        "language": detected_lang if detected_lang != "en" else current_lang,
+                        "source": current_source
+                    }
                 else:
                     # Append content to current chunk
                     if current:
@@ -296,8 +350,20 @@ def load_chunks(path="data.txt"):
             chunks.append(current)
 
         # Filter out chunks with minimal text (< 30 chars) to avoid noise
-        filtered_chunks = [c for c in chunks if len(c["text"]) > 30]
+        filtered_chunks = [c for c in chunks if len(c.get("text", "")) > 30]
         logger.info(f"Loaded {len(filtered_chunks)} chunks from {path}")
+        
+        # Load multilingual chunks if available
+        if include_multilingual:
+            try:
+                multilingual_chunks = load_chunks("data_multilingual.txt", include_multilingual=False)
+                filtered_chunks.extend(multilingual_chunks)
+                logger.info(f"Added {len(multilingual_chunks)} multilingual chunks. Total: {len(filtered_chunks)}")
+            except FileNotFoundError:
+                logger.info("Multilingual data file (data_multilingual.txt) not found. Using primary data only.")
+            except Exception as e:
+                logger.warning(f"Could not load multilingual chunks: {str(e)}")
+        
         return filtered_chunks
     
     except FileNotFoundError:
@@ -413,6 +479,8 @@ class AskRequest(BaseModel):
                           description="Regulatory compliance question (5-1000 chars)")
     top_k: int = Field(default=3, ge=1, le=10,
                        description="Number of sources to retrieve (1-10)")
+    language: str = Field(default="en", regex="^[a-z]{2}$",
+                         description="Language code (en, de, es, fr, nl, pt)")
 
 class Citation(BaseModel):
     """Citation reference for answer sources.
@@ -565,7 +633,7 @@ def login(req: LoginRequest):
     
     Demo credentials:
     - Username: Muthu
-    - Password: Amsterdam@2025 (hash it with mod key 'Handbook')
+    - Password: AIApps@2026 (hash it with mod key 'Handbook')
     """
     logger.info(f"Login attempt for username: {req.username}")
     
@@ -742,6 +810,21 @@ def ask(req: AskRequest, authorization: Optional[str] = Header(None)):
         # [::-1] reverses to descending order (highest similarity first)
         sorted_indices = sims.argsort()[::-1]
         
+        # MULTILINGUAL FILTERING
+        # If user specified a language preference, filter chunks by language
+        # This enables language-aware retrieval for multilingual queries
+        if req.language and req.language != "en":
+            logger.info(f"Filtering for language: {req.language}")
+            # Keep all indices, but prioritize chunks in the requested language
+            # First get language-matching chunks, then fall back to English if needed
+            lang_matching_indices = [i for i in sorted_indices 
+                                    if i < len(CHUNKS) and CHUNKS[i].get("language") == req.language]
+            english_indices = [i for i in sorted_indices 
+                              if i < len(CHUNKS) and CHUNKS[i].get("language", "en") == "en"]
+            # Combine: language matches first, then English fallback
+            sorted_indices = lang_matching_indices + [i for i in english_indices if i not in lang_matching_indices]
+            logger.debug(f"Language filtering complete: {len(lang_matching_indices)} {req.language} chunks, {len(english_indices)} english chunks")
+        
         # Filter to chunks with similarity > 0.05 (removes noise/weak matches)
         # Then take top_k from the filtered list
         idxs = [i for i in sorted_indices if sims[i] > 0.05][:req.top_k]
@@ -771,7 +854,9 @@ def ask(req: AskRequest, authorization: Optional[str] = Header(None)):
             score = float(sims[int(idx)])
             
             # Format source block: [DOCUMENT | SECTION]\ntext
-            source_block = f"[{chunk['doc']} | {chunk['section']}]\n{chunk['text'].strip()}"
+            # Include language code in context if multilingual
+            lang_info = f" [{chunk.get('language', 'en').upper()}]" if chunk.get('language', 'en') != 'en' else ""
+            source_block = f"[{chunk['doc']} | {chunk['section']}{lang_info}]\n{chunk['text'].strip()}"
             sources_blocks.append(source_block)
             
             # Track citation metadata (document + section)
@@ -779,7 +864,6 @@ def ask(req: AskRequest, authorization: Optional[str] = Header(None)):
             
             # Store similarity score for response transparency
             scores.append(score)
-            
             logger.debug(f"Retrieved: {chunk['doc']} - {chunk['section']} (score: {score:.4f})")
 
         # Join all source blocks with spacing for clarity
